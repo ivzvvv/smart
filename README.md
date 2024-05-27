@@ -15,8 +15,8 @@ Programs:
 ---
 - [ ] OBC-PC1.c
     - Interfaces with SDR:
-        - [ ] Receives samples
-        - [ ] Writes to filesystem
+        - [x] Receives samples
+        - [x] Writes to filesystem
         - [ ] Downsamples data
 ---
 - [ ] OBC-PC2.c
