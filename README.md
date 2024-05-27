@@ -1,4 +1,4 @@
-### SMART Experiment Software Architecture
+# SMART Experiment Software Architecture
 
 ![Alt Text](./Images/SW_arch.drawio.png)
 
