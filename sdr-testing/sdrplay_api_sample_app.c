@@ -338,7 +338,7 @@ int main(int argc, char *argv[])
             chParams = (chosenDevice->tuner == sdrplay_api_Tuner_B)? deviceParams->rxChannelB: deviceParams->rxChannelA;
             if (chParams != NULL)
             {
-                chParams->tunerParams.rfFreq.rfHz = 88300000.0; // 220000000.0
+                chParams->tunerParams.rfFreq.rfHz = 88310000.0; // 220000000.0
                 chParams->tunerParams.bwType = sdrplay_api_BW_1_536;
                 if (master_slave == 0) // Change single tuner mode to ZIF
                 {
