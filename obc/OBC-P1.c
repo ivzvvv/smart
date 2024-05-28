@@ -188,7 +188,7 @@ void process_data(const char *data, int data_len) {
         return;
 
     // Wrong format
-    if (data[0] != ':' || data[2] != ':' || data[data_len-2] != ':')
+    if (data[0] != ':' || data[2] != ':' || data[data_len-1] != ':')
         return;
     
     // Store param value in aux
@@ -273,6 +273,8 @@ void *socket_listener(void *arg) {
         printf("Received bytes!\n");
         // Call the callback function with received data
         process_data(buffer, bytes_received);
+        
+        memset(buffer, 0, sizeof(buffer));
     }
 
     // Close the socket
