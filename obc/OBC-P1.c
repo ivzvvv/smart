@@ -200,7 +200,6 @@ void process_data(const char *data, int data_len) {
         printf("Rcvd heartbeat\n");
 
         gs_reception_Timestamp = time(NULL);
-        newParam = 1;
         break;
     case 'F':
         i=0; while(data[i+3] != ':'){aux[i]=data[i+3]; i++;}
