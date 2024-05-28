@@ -11,12 +11,15 @@
 #include <pthread.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <signal.h>
 
 #include "sdrplay_api.h"
 
 #define SAMPLE_RATE 8000000
 #define FILENAME_BUFFER_SIZE 80
 #define RX_TIME_INTERVAL_THRESHOLD 10
+#define DEFAULT_CENTRAL_FREQ 100000000.0
+#define DEFAULT_SAMPLING_RATE 8000000.0
 
 int getCurrTime(char *buffer);
 void write_to_disk();
@@ -24,6 +27,7 @@ typedef void (*data_callback_t)(void*, const char*, int);
 void process_data(const char *data, int data_len);
 void *socket_listener(void *arg);
 int listen_on_socket();
+void cleanup_and_exit();
 
 time_t gs_reception_Timestamp;
 
@@ -34,13 +38,17 @@ short connected_to_GS = 0;
 
 int curr_file=0;
 sdrplay_api_DeviceT *chosenDevice = NULL;
-
+sdrplay_api_ErrT err;
+pthread_t socket_thread;
+int sockfd;
 
 short IQ[SAMPLE_RATE*2+1] = {0};
 int curr = 0, curr_iq=0;
 
 int port = 9090;
-double newFreq = 0;
+double newFreq = DEFAULT_CENTRAL_FREQ;
+double newSampling = DEFAULT_SAMPLING_RATE;
+int newParam = 0;
 
 void
 runSMARTExperiment(sdrplay_api_RxChannelParamsT *chParams){
@@ -48,8 +56,20 @@ runSMARTExperiment(sdrplay_api_RxChannelParamsT *chParams){
     long int elapsed_seconds = 0;
     gs_reception_Timestamp = clock();
 
+    //  Not needed, default is 8M but good to have for debug
+    chParams->tunerParams.rfFreq.rfHz = DEFAULT_CENTRAL_FREQ;
+    chosenDevice->rspDuoSampleFreq = DEFAULT_SAMPLING_RATE;
+    
+    // Prepare socket thread
     listen_on_socket();
     double t = 0;
+
+    // Create ctrl+c and other signal catchers. This is needed to unititialize API 
+    signal(SIGINT, cleanup_and_exit);
+    signal(SIGSEGV, cleanup_and_exit);
+    signal(SIGTERM, cleanup_and_exit);
+    signal(SIGKILL, cleanup_and_exit);
+    
     while (1) 
     {   
         printf("\e[1;1H\e[2J");
@@ -57,10 +77,13 @@ runSMARTExperiment(sdrplay_api_RxChannelParamsT *chParams){
         printf("Current SDR Config:\n");
         printf("Central frequency: %.3f MHz\n", chParams->tunerParams.rfFreq.rfHz/1e6);
         printf("Gain             : %i dB\n", chParams->tunerParams.gain.gRdB);
+        printf("Sampling frequency: %.0f MSPS\n", chosenDevice->rspDuoSampleFreq/1e6);
 
-        if ( newFreq > 1){
+        if ( newParam ){
+            // newParam may generate race condition?
+            newParam = 0;
             chParams->tunerParams.rfFreq.rfHz = newFreq;
-            newFreq = 0;
+            chosenDevice->rspDuoSampleFreq = newSampling;
 
             if ((err = sdrplay_api_Update(chosenDevice->dev, chosenDevice->tuner, sdrplay_api_Update_Tuner_Frf, sdrplay_api_Update_Ext1_None)) != sdrplay_api_Success)
             {
@@ -84,6 +107,32 @@ runSMARTExperiment(sdrplay_api_RxChannelParamsT *chParams){
         elapsed_seconds++;
         sleep(1);
     }
+}
+
+void 
+cleanup_and_exit(){
+    printf("[cleanup]\n");
+    // Close socket
+    close(sockfd);
+    printf("Socket closed.\n");
+
+    // Finished with device so uninitialise it
+    sdrplay_api_Uninit(chosenDevice->dev);
+    printf("Socket closed.\n");
+
+    // Release device (make it available to other applications)
+    sdrplay_api_ReleaseDevice(chosenDevice);
+    printf("Device released.\n");
+    
+    // Unlock API
+    sdrplay_api_UnlockDeviceApi();
+    printf("API Unlocked.\n");
+
+    // Close API
+    sdrplay_api_Close();
+    printf("API closed.\n");
+
+    exit(0);
 }
 
 int 
@@ -118,7 +167,7 @@ write_to_disk(){
     if(connected_to_GS == 1){
         FILE *save_samples;
         save_samples = fopen(filename, "wb");
-        fwrite(IQ, 1, sizeof(IQ), save_samples);
+        fwrite(IQ, 1, sizeof(short)*chosenDevice->rspDuoSampleFreq*2, save_samples);
         printf("[%s] Saved data\n", filename);
         fclose(save_samples);
     }
@@ -131,15 +180,51 @@ write_to_disk(){
 }
 
 void process_data(const char *data, int data_len) {
-    printf("Starting print of recvd data...\n");
     printf("Received data: %s (length: %d)\n", data, data_len);
-    printf("Print ended!\n");
-    newFreq = atof(data) > 2000000 ? atof(data) : newFreq;
-    printf("newFreq = %f\n", newFreq);
+    // Data format  :F:88000000: - central frequency
+    //              :S:6000000:  - sampling rate
+    //              :H:          - Heartbeat
+    if(data_len < 3) // Minimum msg length
+        return;
+
+    // Wrong format
+    if (data[0] != ':' || data[2] != ':' || data[data_len-2] != ':')
+        return;
+    
+    // Store param value in aux
+    char aux[data_len];
+    int i=0;
+    switch (data[1])
+    {
+    case 'H':
+        printf("Rcvd heartbeat\n");
+
+        gs_reception_Timestamp = time(NULL);
+        newParam = 1;
+        break;
+    case 'F':
+        i=0; while(data[i+3] != ':'){aux[i]=data[i+3]; i++;}
+        newFreq = atof(aux) > 2000000 ? atof(aux) : newFreq;
+
+        gs_reception_Timestamp = time(NULL);
+        newParam = 1;
+        break;
+    case 'S':
+        i=0; while(data[i+3] != ':'){aux[i]=data[i+3]; i++;}
+        newSampling = atof(aux) > 1000000 ? atof(aux) : newSampling;
+
+        gs_reception_Timestamp = time(NULL);
+        newParam = 1;
+        break;
+    default:
+        printf("Wrong format\n");
+        break;
+    }
+    
+
 }
 
 void *socket_listener(void *arg) {
-    int sockfd;
     struct sockaddr_in server_addr;
     // Create a socket
     sockfd = socket(AF_INET, SOCK_STREAM, 0);  // TCP socket
@@ -152,7 +237,7 @@ void *socket_listener(void *arg) {
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = INADDR_ANY;  // Listen on all interfaces
-    server_addr.sin_port = htons(9090);  // Port to listen on
+    server_addr.sin_port = htons(port);  // Port to listen on
 
     // Bind the socket to the address
     if (bind(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
@@ -177,7 +262,7 @@ void *socket_listener(void *arg) {
         //printf("waiting....\n");
         int fd=accept(sockfd,NULL,NULL);
         int bytes_received = recv(fd, buffer, sizeof(buffer), 0);
-        gs_reception_Timestamp = time(NULL);
+        
         if (bytes_received == 0) {
             // Connection closed by peer
             printf("Connection closed by peer.\n");
@@ -199,12 +284,12 @@ void *socket_listener(void *arg) {
 
 int listen_on_socket() {
   // Create a thread to listen on the socket
-  pthread_t thread;
+  
   void *args[2];
   args[0] = NULL;
   args[1] = NULL;  // Assuming process_data is defined elsewhere
 
-  int ret = pthread_create(&thread, NULL, socket_listener, args);
+  int ret = pthread_create(&socket_thread, NULL, socket_listener, args);
   if (ret != 0) {
     perror("pthread_create");
     return -1;
@@ -226,7 +311,7 @@ StreamACallback(short *xi, short *xq, sdrplay_api_StreamCbParamsT *params, unsig
     // Process stream callback data here
     //printf("[ %i / %i]\n", params->firstSampleNum/8000000, numSamples);
     for(int i = 0; i < numSamples; i++){
-        if(curr > SAMPLE_RATE){
+        if(curr > chosenDevice->rspDuoSampleFreq){
             curr = 0;
             curr_iq = 0;
 
@@ -303,7 +388,7 @@ EventCallback(sdrplay_api_EventT eventId, sdrplay_api_TunerSelectT tuner, sdrpla
 void 
 usage(void)
 {
-    printf("Usage: sample_app.exe [A|B] [ms]\n");
+    printf("Usage: ./OBC-P1 [central frequency]\n");
     exit(1);
 }
 
@@ -315,7 +400,6 @@ main(int argc, char *argv[])
     unsigned int ndev; 
     int i;
     float ver = 0.0;
-    sdrplay_api_ErrT err;
     sdrplay_api_DeviceParamsT *deviceParams = NULL;
     sdrplay_api_CallbackFnsT cbFns;
     sdrplay_api_RxChannelParamsT *chParams;
