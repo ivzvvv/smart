@@ -47,16 +47,16 @@ Available commands:
 | S | Sampling Frequency | in Hz |
 
 ---
-- [ ] OBC-P2.c <span style="color:red">Maybe not needed anymore</span>
+- [ ] OBC-P2.c **Maybe not needed anymore**
     - Interfaces with MCC
-        - [ ] Receives commands <span style="color:red"> This is done in OBC-P1</span>
+        - [ ] Receives commands **This is done in OBC-P1**
             - TODO: define parameters to be changed
-        - [ ] Changes necessary config parameters <span style="color:red"> This is done in OBC-P1. No config file, everything in memory</span>
+        - [ ] Changes necessary config parameters **This is done in OBC-P1. No config file, everything in memory**
 ---
 
-- [ ] OBC-P3.c <span style="color:red">OBC-P1 Can also do this in real-time. Create thread to downsample and send data</span>
+- [ ] OBC-P3.c **OBC-P1 Can also do this in real-time. Create thread to downsample and send data**
     - Interfaces with OBC-P1 and MCC
-        - [ ] Receives downsampled files (from filesystem or directly from OBC-P1) <span style="color:red"> If done in OBC-P1 no need to send data, everything already in process memory ready to send</span>
+        - [ ] Receives downsampled files (from filesystem or directly from OBC-P1) **If done in OBC-P1 no need to send data, everything already in process memory ready to send**
         - [ ] Transmits data to MCC
 ---
 - [ ] OBC-P4.c
