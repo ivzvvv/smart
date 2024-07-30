@@ -22,7 +22,12 @@ Programs:
     - [x] Parse Comands
     - [ ] Center signal to desired frequency before downsample
     - [x] Downsample data (factor of 2048: 8M -> 3.9062k)
-    - [ ] Transmit  downsampled data to MCC   
+    - [ ] ~~Transmit  downsampled data to MCC~~ Done with Resilio Sync
+
+#### Synchronizing data with GS
+
+[Resilio Sync](https://www.resilio.com/) will be used to syncronize the folder of the OBC containing the downsampled data.
+Sync folder is ```/home/rslsync/``` in OBC and MCC.
 
 ##### Command format:
 
@@ -51,7 +56,7 @@ Available commands:
     - Interfaces with GNSS Receiver
         - [ ] Receives data from Receiver 
         - [ ] Stores data locally
-        - [ ] Transmits data to MCC
+        - [ ] ~~Transmits data to MCC~~ Done with Resilio Sync
 ---
 
 
@@ -75,3 +80,12 @@ MCC programs will be implemented in matlab as a standalone app.
 |OBC   | 9090 | OBC-P1|Receive commands to change SDR tuner configuration|
 |OBC   |22    |  ssh  |  Open ssh connection     |
 |MCC   | 9191 | MCC-P1|Receive I/Q data from SS  |
+
+
+#### Throttle Uplink and Downlink
+
+```
+(OBC-downlink-115kbit) $ sudo tc qdisc add dev <eth-iface> root tbf rate 115kbit burst 16kbit latency 50ms
+(MCC-uplink-10kbit)    $ sudo tc qdisc add dev <eth-iface> root tbf rate 10kbit burst 10kbit latency 50ms
+```
+
