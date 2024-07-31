@@ -92,9 +92,9 @@ MCC programs will be implemented in matlab as a standalone app.
 #### GPS
 
 On startup:
-    - Set /dev/ttyUSB0 baudrate to 115200: 
+- Set /dev/ttyUSB0 baudrate to 115200: 
         ```sudo stty -F /dev/ttyUSB0 115200```
-    - Start gpsd daemon:
+- Start gpsd daemon:
         ```sudo gpsd /dev/ttyUSB0 -n -N -D 3 -G```
 
 
