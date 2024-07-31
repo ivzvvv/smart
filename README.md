@@ -89,3 +89,10 @@ MCC programs will be implemented in matlab as a standalone app.
 (MCC-uplink-10kbit)    $ sudo tc qdisc add dev <eth-iface> root tbf rate 10kbit burst 10kbit latency 50ms
 ```
 
+#### GPS
+
+On startup:
+    - Set /dev/ttyUSB0 baudrate to 115200: 
+        ```sudo stty -F /dev/ttyUSB0 115200```
+    - Start gpsd daemon:
+        ```sudo gpsd /dev/ttyUSB0 -n -N -D 3```
