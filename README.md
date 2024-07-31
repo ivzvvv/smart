@@ -95,4 +95,15 @@ On startup:
     - Set /dev/ttyUSB0 baudrate to 115200: 
         ```sudo stty -F /dev/ttyUSB0 115200```
     - Start gpsd daemon:
-        ```sudo gpsd /dev/ttyUSB0 -n -N -D 3```
+        ```sudo gpsd /dev/ttyUSB0 -n -N -D 3 -G```
+
+
+#### OBC USB per-port power switching 
+
+```uhubctl``` can be used to control power of individual USB ports of the Raspberry Pi. Useful to control SDR USB port.
+
+```sudo uhubctl -l 1-1 -p 2 -a off```
+```-l```: hub location
+```-p```: port number
+```-a```: action, ```on```/```off```
+
