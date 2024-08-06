@@ -20,7 +20,7 @@ Programs:
         - [ ] TODO: Change write to always instead of when connected_to_GS (keep for testing)
     - [x] Receive commands
     - [x] Parse Comands
-    - [ ] Center signal to desired frequency before downsample
+    - [x] Center signal to desired frequency before downsample
     - [x] Downsample data (factor of 2048: 8M -> 3.9062k)
     - [x] ~~Transmit  downsampled data to MCC~~ Done with Resilio Sync
 
@@ -128,3 +128,12 @@ Ensure ```ExecStart``` variable in ```obc-p1.service``` corresponds to the path 
 ```sudo systemctl enable obc-p1.service```
 
 Stops when SDR is disconnected. Restarts every 5 seconds. 
+
+
+#### restart-sdr-usb service
+
+The ```restart-sdr-usb.sh``` script is used as a systemd service to power off and after 5 seconds power on the SDR usb port. Required files:
+- Copy ```/systemd/restart-sdr-usb.service``` to ```/etc/systemd/system/restart-sdr-usb.service```
+- ```restart-sdr-usb.sh``` script
+
+Ensure ```ExecStart``` variable in ```restart-sdr-usb.service``` corresponds to the path to the ```restart-sdr-usb.sh``` script. **DO NOT ENABLE THIS SERVICE. IT IS SUPOSED TO BE STARTED BY OBC-P1 WHEN THE :R: COMMAND IS RECEIVED. AFTER POWERING ON AND OFF THE SERVICE QUITS.**
