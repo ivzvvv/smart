@@ -5,3 +5,4 @@ obc/OBC-P4
 mcc/send-cmd-test
 sdr-testing/sdrplay_api_sample_app
 obc/2024*
+gps/gps.log
