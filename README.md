@@ -80,7 +80,6 @@ MCC programs will be implemented in matlab as a standalone app.
 |OBC   |22    |  ssh  |  Open ssh connection     |
 |MCC   | 9191 | MCC-P1|Receive I/Q data from SS  |
 
-
 #### Throttle Uplink and Downlink
 
 ```
