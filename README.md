@@ -47,7 +47,8 @@ Available commands:
 | H | Heartbeat | no value |
 | F | Tuner central frequency| in Hz |
 | S | Sampling Frequency | in Hz |
-| U | (TODO) Shutdown SDR USB port | no value |
+| U | Shutdown SDR USB port | no value |
+| R | Shutdown and restart SDR USB port | no value |
 | Z | (TODO) End of flight experiment shutdown | no value |
 
 ---

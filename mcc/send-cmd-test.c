@@ -14,7 +14,7 @@
 #include <signal.h>
 #include <arpa/inet.h>
 
-#define SERVER_ADDRESS "127.0.0.1"  
+#define SERVER_ADDRESS "192.168.70.200"  
 #define SERVER_PORT 9090               
 
 int main(int argc, char *argv[]) {
@@ -35,13 +35,14 @@ int main(int argc, char *argv[]) {
     
     int max_value_length = 12;  
     int string_length =0;
-    if(command != 'H')
+
+    if(command != 'H' && command != 'U' && command != 'Z' && command != 'R')
         string_length = 3 + 1 + strlen(argv[2]) + max_value_length + 2;  
     else
         string_length = 3 + 1 + max_value_length + 2;  
     char formatted_string[string_length];
-
-    if (command == 'H')
+    
+    if (command == 'H' || command == 'U' || command == 'Z'|| command == 'R')
         snprintf(formatted_string, string_length, ":%c:", command);
     else
         snprintf(formatted_string, string_length, ":%c:%d:", command, value);

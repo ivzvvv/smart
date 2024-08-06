@@ -370,6 +370,9 @@ void process_data(const char *data, int data_len) {
         system("uhubctl -l 1-1 -p 3 -a off");
         
         break;
+    case 'R':
+        system("systemctl start restart-sdr-usb.service");
+        break;
     default:
         printf("Wrong format\n");
         break;
