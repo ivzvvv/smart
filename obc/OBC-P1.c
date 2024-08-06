@@ -364,6 +364,11 @@ void process_data(const char *data, int data_len) {
         gs_reception_Timestamp = time(NULL);
         newParam = 1;
         break;
+    case 'U':
+        // Turn off USB
+        // uhubctl -l 1-1 -p 3 -a off
+        system("uhubctl -l 1-1 -p 3 -a off");
+        break;
     default:
         printf("Wrong format\n");
         break;
