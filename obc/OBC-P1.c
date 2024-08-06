@@ -27,6 +27,8 @@
 #include "sdrplay_api.h"
 #include "filters.h"
 
+#include "sinCosTable.h"
+
 #define SAMPLE_RATE 8000000
 #define FILENAME_BUFFER_SIZE 80
 #define RX_TIME_INTERVAL_THRESHOLD 10
@@ -76,6 +78,9 @@ filter_16 round9_i,round9_q;
 filter_32 round10_i,round10_q;
 filter_128 round11_i,round11_q;
 int16_t IQ_out[SAMPLE_RATE*2+1] = {0};
+
+int sinIndex = 0;
+int cosIndex = 20000;
 
 int sockfd_data, n; 
 struct sockaddr_in servaddr_data; 

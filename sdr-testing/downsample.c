@@ -7,9 +7,14 @@
 
 #define SAMPLE_RATE 8000000
 
+#include "sinCosTable.h"
+
 int16_t IQ[SAMPLE_RATE*2+1] = {0};
 int16_t IQ_out[SAMPLE_RATE*2+1] = {0};
 int curr = 0, curr_iq=0;
+
+int sinIndex = 0;
+int cosIndex = 20000;
 
 int main (){
     clock_t start, end;
@@ -117,8 +122,12 @@ int main (){
     int samples_out = 0;
 
     // nos ifs substituir: round1_i.curr_s == SIZE_16-1 -> round1_i.next_OK
-    for(int sample = 0; sample < SAMPLE_RATE*2+1; sample+=2){
-        add_16(&round1_i, IQ[sample]); add_16(&round1_q, IQ[sample+1]);
+    for(int sample = 0; sample < 1000000 /*SAMPLE_RATE*2+1*/; sample+=2){
+        //printf("I/Q \t %i/%i \t sin/cos \t %f/%f \t %i/%i \n", IQ[sample], IQ[sample+1], sinCosTable[sinIndex], sinCosTable[cosIndex], (int)((float)IQ[sample]*sinCosTable[sinIndex]), (int)((float)IQ[sample+1]*sinCosTable[cosIndex]));
+        //printf("I/Q \t %i/%i \t %i/%i \n", IQ[sample], IQ[sample+1], ((IQ[sample]+4096) & 0b111111111111)-4096, ((IQ[sample+1]+4096) & 0b111111111111)-4096);
+        add_16(&round1_i, (int16_t)((float)IQ[sample]*sinCosTable[sinIndex])); add_16(&round1_q, (int16_t)((float)IQ[sample+1]*sinCosTable[cosIndex]));
+        sinIndex = sinIndex+1 == 80000 ? 0 : sinIndex+1;
+        cosIndex = cosIndex+1 == 80000 ? 0 : cosIndex+1;
         //printf("round1_i.curr_s = %i | round1_i.head = %i | round1_i.tail = %i \n", round1_i.curr_s, round1_i.head, round1_i.tail);
         //printf("round2_i.curr_s = %i | round2_i.head = %i | round2_i.tail = %i \n", round2_i.curr_s, round2_i.head, round2_i.tail);
         if (round1_i.next_OK){
@@ -179,11 +188,54 @@ int main (){
             samples_out++;
             //printf("[%.2f%%] Written samples %i/%i\n", (float)sample/sizeof(IQ)*200.0, IQ_out[samples_out-2], IQ_out[samples_out-1]);
             //exit(0);
+            //((IQ[sample]+4096) & 0b111111111111)-4096
+            
+            uint8_t byte1_out;
+            uint8_t byte2_out;
+            uint8_t byte3_out;
+
+            byte1_out = (((uint16_t)IQ[samples_out-2]) >> 4) & 0b11111111;
+            
+            byte2_out =              (((uint16_t)IQ[samples_out-2]) << 4) & 0b11110000;
+            byte2_out = byte2_out | ((((uint16_t)IQ[samples_out-1]) >> 8) & 0b00001111);
+
+            byte3_out = (((uint16_t)IQ[samples_out-1])) & 0b11111111;
+
+            fwrite(&byte1_out, sizeof(byte1_out),1,out);
+            fwrite(&byte2_out, sizeof(byte2_out),1,out);
+            fwrite(&byte3_out, sizeof(byte3_out),1,out);
+
+            int16_t read_I = 0;
+            read_I = byte1_out << 4; 
+            read_I = read_I | ((byte2_out >> 4) & 0b00001111);
+            //read_I = read_I - 4096;
+
+            int16_t read_Q = 0;
+            read_Q = (byte2_out & 0b1111) << 8; 
+            read_Q = read_Q | ((byte3_out & 0b11111111));
+            //read_Q = read_Q - 4096;
+
+            //printf("Filtered: %i/%i \t After Write+Read: %i/%i \n", IQ_out[samples_out-2], IQ_out[samples_out-1], read_I, read_Q);
+            printf((IQ_out[samples_out-2] & 0b111111111111) == (read_I & 0b111111111111) ? "true" : "false");
         }
     }
     
+    // 2 bytes I + 2 bytes Q = 4 bytes. 
+    // 16 bits I + 16 bit = 4
+    //          |
+    //          V
+    // 12 bits I + 12 bits Q
+    //      24 bits = 3 bytes
+    //  
+    //   --------------- --------------- ---------------
+    //  |    byte 1     |   byte 2      |    byte 3     |
+    //   --------------- ---------------- -------------- 
+    //  |I|I|I|I|I|I|I|I|I|I|I|I|Q|Q|Q|Q|Q|Q|Q|Q|Q|Q|Q|Q|
+    //   - - - - - - - - - - - - - - - - - - - - - - - -
+    //  |1|2|3|4|5|6|7|8|1|2|3|4|5|6|7|8|1|2|3|4|5|6|7|8
+    //   - - - - - - - - - - - - - - - - - - - - - - - -
     printf("Samples out = %i/%i\n", samples_out, SAMPLE_RATE*2);
-    fwrite(IQ_out, sizeof(int16_t)*samples_out,1, out);
+    //fwrite(IQ_out, sizeof(int16_t)*samples_out,1, out);
 
     end = clock();
     cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;

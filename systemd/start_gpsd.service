@@ -1,0 +1,13 @@
+[Unit]
+Description=My Custom Script
+After=network.target
+
+[Service]
+ExecStart=/home/smart/start_gpsd.sh
+Restart=always
+RestartSec=5
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target

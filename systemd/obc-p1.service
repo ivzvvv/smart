@@ -1,0 +1,13 @@
+[Unit]
+Description=OBC-P1
+After=network.target
+
+[Service]
+ExecStart=/home/smart/OBC-P1
+Restart=always
+RestartSec=5
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target
