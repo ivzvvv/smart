@@ -3,7 +3,7 @@ CC=gcc
 CFLAGS=-g -Wall -Wl,-rpath=/usr/local/lib64
 LDLIBS=-lsdrplay_api
 
-all: OBC-P1 OBC-P2 OBC-P3 OBC-P4
+all: OBC-P1
 
 run: OBC-P1
 	./OBC-P1

@@ -14,7 +14,7 @@
 #include <signal.h>
 #include <arpa/inet.h>
 
-#define SERVER_ADDRESS "192.168.70.200"  
+#define SERVER_ADDRESS "127.0.0.1"//"192.168.70.200"  
 #define SERVER_PORT 9090               
 
 int main(int argc, char *argv[]) {

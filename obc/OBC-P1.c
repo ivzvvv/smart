@@ -30,12 +30,13 @@
 #include "sinCosTable.h"
 
 #define SAMPLE_RATE 8000000
-#define FILENAME_BUFFER_SIZE 80
+#define FILENAME_BUFFER_SIZE 256
 #define RX_TIME_INTERVAL_THRESHOLD 10
 #define DEFAULT_CENTRAL_FREQ 100000000.0
 #define DEFAULT_SAMPLING_RATE 8000000.0
+#define WRITE_TO_DISK_INTERVAL 5
 
-int getCurrTime(char *buffer);
+int getDownsampleFileName(char *buffer, int downsample);
 void write_to_disk();
 typedef void (*data_callback_t)(void*, const char*, int);
 void process_data(const char *data, int data_len);
@@ -85,15 +86,24 @@ int cosIndex = 20000;
 int sockfd_data, n; 
 struct sockaddr_in servaddr_data; 
 
+time_t last_file_create;
+time_t current_time ;
+
+// TODO: Start filename with "/home/smart/rlsync/"
+char filename_downsample[FILENAME_BUFFER_SIZE];
+char filename_raw[FILENAME_BUFFER_SIZE];
+int written_samples = 160000000; //start at 16M to create first file
+int written_raw = 16000000; // same as above
+
 void
 runSMARTExperiment(sdrplay_api_RxChannelParamsT *chParams){
     sdrplay_api_ErrT err;
     long int elapsed_seconds = 0;
     gs_reception_Timestamp = clock();
-    
+
     // change this later
     
-      
+      /*
     // clear servaddr 
     bzero(&servaddr_data, sizeof(servaddr_data)); 
     servaddr_data.sin_addr.s_addr = inet_addr("127.0.0.1"); 
@@ -108,7 +118,7 @@ runSMARTExperiment(sdrplay_api_RxChannelParamsT *chParams){
     { 
         printf("\n Error : Connect Failed \n"); 
         exit(0); 
-    } 
+    } */
     //------------
     
     //  Not needed, default is 8M but good to have for debug
@@ -151,7 +161,6 @@ runSMARTExperiment(sdrplay_api_RxChannelParamsT *chParams){
         t = (double)(time(NULL) - gs_reception_Timestamp);
         printf("Time since last reception: %.2f\n", t);
 
-        
         //  Only send to GS if time since last cmd reception < TIME_THRESHOLD
         if (t > RX_TIME_INTERVAL_THRESHOLD){
             connected_to_GS = 0;
@@ -193,11 +202,19 @@ cleanup_and_exit(){
 }
 
 int 
-getCurrTime(char *buffer){
-    time_t current_time = time(NULL);
+getDownsampleFileName(char *buffer, int downsample){
+    current_time = time(NULL);
 
+    if(downsample){
+        if (written_samples < 7812)
+            return 1;
+    }
+    else{
+        if (written_raw < 16000000)
+            return 1;
+    }
     //printf("Current Unix Timestamp: %ld\n", current_time);
-
+    last_file_create = current_time;
     struct tm * timeinfo;
 
     timeinfo = localtime(&current_time);
@@ -206,23 +223,51 @@ getCurrTime(char *buffer){
       fprintf(stderr, "Error converting time: %s\n", strerror(errno));
       return 0;
     }
+    char time_str[FILENAME_BUFFER_SIZE];
+    strftime(time_str, sizeof(time_str)*FILENAME_BUFFER_SIZE, "%Y-%m-%d %H:%M:%S", timeinfo);
+    char aux[30];
 
-    strftime(buffer, sizeof(buffer)*FILENAME_BUFFER_SIZE, "%Y-%m-%d %H:%M:%S.bin", timeinfo);
+    if(downsample){
+        sprintf(aux, "_DOWNSAMPLED_f=%.3f.bin", newFreq/1000000);
+    }
+    else{
+        sprintf(aux, "RAW_f=%.3f.bin", newFreq/1000000);
+    }
+    //strcat(buffer, aux);
+
+    /*  TODO: distinguish between downsample and raw for the filename */
+    char downsample_path[FILENAME_BUFFER_SIZE] = "downsampled/";
+    char raw_path[FILENAME_BUFFER_SIZE] = "raw/";
+    if(downsample){
+        strcat(downsample_path, time_str);
+        strcat(downsample_path, aux);
+        sprintf(buffer, "%s", downsample_path);
+    }
+    else{
+        strcat(raw_path, time_str);
+        strcat(raw_path, aux);
+        sprintf(buffer, "%s", raw_path);
+    }
+    
+   if(downsample)
+        written_samples = 0;
+    else
+        written_raw = 0;
     return 1;
 }
 
 
 void 
 write_to_disk(short *xi, short *xq, int numSamples){
-    char filename[FILENAME_BUFFER_SIZE];
-    
-    if(!getCurrTime(filename))
+
+    if(!getDownsampleFileName(filename_downsample, 1))
         return;
 
-    // This is to test. 
-    // TODO: Remove this and make this change in the transmission to the GS after decimation
     for(int sample = 0; sample < numSamples; sample++){
-        add_16(&round1_i, xi[sample]); add_16(&round1_q, xq[sample]);
+        add_16(&round1_i, (int16_t)((float)IQ[sample]*sinCosTable[sinIndex])); add_16(&round1_q, (int16_t)((float)IQ[sample+1]*sinCosTable[cosIndex]));
+        sinIndex = sinIndex+1 == 80000 ? 0 : sinIndex+1;
+        cosIndex = cosIndex+1 == 80000 ? 0 : cosIndex+1;
+        //printf("samples_out %i \t sample %i\n", samples_out, sample);
         //printf("round1_i.curr_s = %i | round1_i.head = %i | round1_i.tail = %i \n", round1_i.curr_s, round1_i.head, round1_i.tail);
         //printf("round2_i.curr_s = %i | round2_i.head = %i | round2_i.tail = %i \n", round2_i.curr_s, round2_i.head, round2_i.tail);
         if (round1_i.next_OK){
@@ -277,20 +322,22 @@ write_to_disk(short *xi, short *xq, int numSamples){
 
         if (round11_i.next_OK){
             round11_i.next_OK = false;
-            if(samples_out > 8000000)
+            if(samples_out > 16000000)
                 samples_out = 0;
-            //IQ_out[samples_out] = mult_128(round11_i);
+            IQ_out[samples_out] = mult_128(round11_i);
             samples_out++;
-            //IQ_out[samples_out] = mult_128(round11_q);
+            IQ_out[samples_out] = mult_128(round11_q);
             samples_out++;
+            int16_t out_i = mult_128(round11_i);
+            int16_t out_q = mult_128(round11_q);
             if(connected_to_GS == 1){
-                int16_t wi = mult_128(round11_i);
-                int16_t wq = mult_128(round11_q);
-                sendto(sockfd_data, &wi, sizeof(int16_t), 0, (struct sockaddr*)NULL, sizeof(servaddr_data)); 
-                sendto(sockfd_data, &wq, sizeof(int16_t), 0, (struct sockaddr*)NULL, sizeof(servaddr_data)); 
-                samples_out = 0;
+                FILE *save_samples;
+                save_samples = fopen(filename_downsample, "ab");
+                fwrite(&out_i, sizeof(int16_t), 1, save_samples);
+                fwrite(&out_q, sizeof(int16_t), 1, save_samples);
+                fclose(save_samples);
+                written_samples+=2;
             }
-            
         }
         
         samples_debug++;
@@ -321,6 +368,8 @@ write_to_disk(short *xi, short *xq, int numSamples){
         //printf("Sent to GS\n");
     }
         */
+       
+
     curr_file++;
     if (curr_file == 10){
         //exit(0);
@@ -460,13 +509,36 @@ int listen_on_socket() {
   return 0;
 }
 
+int time_since_last_disk_write(){
+    return time(NULL) - last_file_create;
+}
 
 void 
 StreamACallback(short *xi, short *xq, sdrplay_api_StreamCbParamsT *params, unsigned int numSamples, unsigned int reset, void *cbContext)
 {
     if (reset)
         printf("sdrplay_api_StreamACallback: numSamples=%d\n", numSamples);
+
+    //if(time_since_last_disk_write() > WRITE_TO_DISK_INTERVAL)
     write_to_disk(xi, xq, numSamples);
+
+    getDownsampleFileName(filename_raw, 0);
+    
+    FILE *f_raw = fopen(filename_raw, "ab");
+    for(int j = 0; j < numSamples; j++){
+        fwrite(&xi[j], sizeof(int16_t), 1, f_raw);
+        written_raw++;
+        fwrite(&xq[j], sizeof(int16_t), 1, f_raw);
+        written_raw++;
+    }
+    fclose(f_raw);
+
+    /*if(written_raw == 16000000){
+        written_raw = 0;
+        FILE *f_raw = fopen(filename_raw, "wb");
+        fwrite(IQ, sizeof(int16_t)*16000000, 1, f_raw);
+        fclose(f_raw);
+    }*/
     //printf("Received samples %i\n", numSamples);
     //sleep(1);
     // Process stream callback data here

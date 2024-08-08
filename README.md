@@ -17,7 +17,8 @@ Programs:
     - [x] Receives samples from SDR
     - [x] Change SDR configuration
     - [x] Writes to filesystem
-        - [ ] TODO: Change write to always instead of when connected_to_GS (keep for testing)
+        - [X] Raw samples always - 1 file 32 MB per second (8 mega I/Q samples)
+        - [X] Downsampled samples when connected_to_GS - 1 file 15.624 KB (3906 I/Q samples)
     - [x] Receive commands
     - [x] Parse Comands
     - [x] Center signal to desired frequency before downsample
