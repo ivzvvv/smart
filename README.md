@@ -138,3 +138,11 @@ The ```restart-sdr-usb.sh``` script is used as a systemd service to power off an
 - ```restart-sdr-usb.sh``` script
 
 Ensure ```ExecStart``` variable in ```restart-sdr-usb.service``` corresponds to the path to the ```restart-sdr-usb.sh``` script. **DO NOT ENABLE THIS SERVICE. IT IS SUPOSED TO BE STARTED BY OBC-P1 WHEN THE :R: COMMAND IS RECEIVED. AFTER POWERING ON AND OFF THE SERVICE QUITS.**
+
+
+#### End of experiment Shutdown Procedures
+
+- Stop and disable ```obc-p1.service```
+- Stop and disable ```start_gpsd.service```
+- Unmount SSD
+- Shutdown Pi
