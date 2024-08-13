@@ -139,6 +139,13 @@ The ```restart-sdr-usb.sh``` script is used as a systemd service to power off an
 
 Ensure ```ExecStart``` variable in ```restart-sdr-usb.service``` corresponds to the path to the ```restart-sdr-usb.sh``` script. **DO NOT ENABLE THIS SERVICE. IT IS SUPOSED TO BE STARTED BY OBC-P1 WHEN THE :R: COMMAND IS RECEIVED. AFTER POWERING ON AND OFF THE SERVICE QUITS.**
 
+#### Mount SSD
+
+```/etc/fstab``` has the following entry:
+
+```PARTUUID=22eb6c44-2e0d-4a4a-be2a-e5fddf32b1c9    /mnt/OBC-SMART	    ntfs    defaults    0   2```
+
+This automounts the external SSD to the ```/mnt/OBC-SMART``` folder on startup. 
 
 #### End of experiment Shutdown Procedures
 
