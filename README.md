@@ -82,12 +82,16 @@ MCC programs will be implemented in matlab as a standalone app.
 |OBC   |22    |  ssh  |  Open ssh connection     |
 |MCC   | 9191 | MCC-P1|Receive I/Q data from SS  |
 
+---
+
 #### Throttle Uplink and Downlink
 
 ```
 (OBC-downlink-115kbit) $ sudo tc qdisc add dev <eth-iface> root tbf rate 115kbit burst 16kbit latency 50ms
 (MCC-uplink-10kbit)    $ sudo tc qdisc add dev <eth-iface> root tbf rate 10kbit burst 10kbit latency 50ms
 ```
+
+---
 
 #### GPS
 
@@ -107,6 +111,8 @@ Ensure ```ExecStart``` variable in ```start_gpsd.service``` corresponds to the p
 
 TODO: Add on-board ```./telnet-client 127.0.0.1 2947``` executed after the gpsd daemon to save the gpsd data locally.
 
+---
+
 #### OBC USB per-port power switching 
 
 ```uhubctl``` can be used to control power of individual USB ports of the Raspberry Pi. Useful to control SDR USB port.
@@ -118,6 +124,7 @@ TODO: Add on-board ```./telnet-client 127.0.0.1 2947``` executed after the gpsd 
 
 **IMPORTANT NOTE: During setup on campaign week, annotate the USB port of the SDR and don't change it.**
 
+---
 
 #### OBC-P1 service
 
@@ -130,6 +137,7 @@ Ensure ```ExecStart``` variable in ```obc-p1.service``` corresponds to the path 
 
 Stops when SDR is disconnected. Restarts every 5 seconds. 
 
+---
 
 #### restart-sdr-usb service
 
@@ -139,6 +147,8 @@ The ```restart-sdr-usb.sh``` script is used as a systemd service to power off an
 
 Ensure ```ExecStart``` variable in ```restart-sdr-usb.service``` corresponds to the path to the ```restart-sdr-usb.sh``` script. **DO NOT ENABLE THIS SERVICE. IT IS SUPOSED TO BE STARTED BY OBC-P1 WHEN THE :R: COMMAND IS RECEIVED. AFTER POWERING ON AND OFF THE SERVICE QUITS.**
 
+---
+
 #### Mount SSD
 
 ```/etc/fstab``` has the following entry:
@@ -146,6 +156,8 @@ Ensure ```ExecStart``` variable in ```restart-sdr-usb.service``` corresponds to 
 ```PARTUUID=22eb6c44-2e0d-4a4a-be2a-e5fddf32b1c9    /mnt/OBC-SMART	    ntfs    defaults    0   2```
 
 This automounts the external SSD to the ```/mnt/OBC-SMART``` folder on startup. 
+
+---
 
 #### End of experiment Shutdown Procedures
 
