@@ -153,13 +153,30 @@ Ensure ```ExecStart``` variable in ```restart-sdr-usb.service``` corresponds to 
 
 ```/etc/fstab``` has the following entry:
 
-```PARTUUID=22eb6c44-2e0d-4a4a-be2a-e5fddf32b1c9    /mnt/OBC-SMART	    ntfs    defaults    0   2```
+```PARTUUID=22eb6c44-2e0d-4a4a-be2a-e5fddf32b1c9    /mnt/OBC-SMART	    ext4    defaults    0   2```
 
-This automounts the external SSD to the ```/mnt/OBC-SMART``` folder on startup. 
+This automounts the external SSD to the ```/mnt/OBC-SMART``` folder on startup. ```ext4``` is faster than ```ntfs```.
+
+---
+
+#### RSYNC
+
+- ```rsync``` service
+- copy ```/rsync/rsyncd.conf``` to ```/etc/rsyncd.conf``` in the OBC - file contains configuration parameters for the rsync service
+- copy ```/rsync/rsyncd_users.db``` to ```/etc/rsyncd_users.db``` in the OBC - file contains ```user:password``` of the users allowed to login.
+- in the MCC run ```rsync -avz --password-file=/path/to/password smart@<obc ip>::share <destination folder>``` to retrieve the synced folder from the OBC to the MCC.
+
+--- 
+
+#### NTP - synchronise OBC clock with GS PC
+
+TODO
 
 ---
 
 #### End of experiment Shutdown Procedures
+
+TODO
 
 - Stop and disable ```obc-p1.service```
 - Stop and disable ```start_gpsd.service```
