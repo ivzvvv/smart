@@ -65,6 +65,7 @@ int samples_debug = 0;
 
 int port = 9090;
 double newFreq = DEFAULT_CENTRAL_FREQ;
+double centralFrequency = DEFAULT_CENTRAL_FREQ;
 double newSampling = DEFAULT_SAMPLING_RATE;
 double newGain = DEFAULT_GAIN;
 int newParam = 0;
@@ -232,10 +233,10 @@ getDownsampleFileName(char *buffer, int downsample){
     char aux[30];
 
     if(downsample){
-        sprintf(aux, "_DOWNSAMPLED_f_%.3f.bin", newFreq/1000000);
+        sprintf(aux, "_DOWNSAMPLED_f_%.3f.bin", centralFrequency/1000000);
     }
     else{
-        sprintf(aux, "_RAW_f_%.3f.bin", newFreq/1000000);
+        sprintf(aux, "_RAW_f_%.3f.bin", centralFrequency/1000000);
     }
     //strcat(buffer, aux);
 
@@ -340,7 +341,7 @@ write_to_disk(short *xi, short *xq, int numSamples){
                 fwrite(&out_i, sizeof(int16_t), 1, save_samples);
                 fwrite(&out_q, sizeof(int16_t), 1, save_samples);
                 chown(filename_downsample, 1000, 1000);
-		fclose(save_samples);
+		        fclose(save_samples);
                 written_samples+=2;
             }
         }
@@ -382,7 +383,8 @@ write_to_disk(short *xi, short *xq, int numSamples){
     curr = 0;
 }
 
-void process_data(const char *data, int data_len) {
+void 
+process_data(const char *data, int data_len) {
     printf("Received data: %s (length: %d)\n", data, data_len);
     // Data format  :F:88000000: - central frequency
     //              :S:6000000:  - sampling rate
@@ -436,7 +438,8 @@ void process_data(const char *data, int data_len) {
         break;
     case 'C':
         i=0; while(data[i+3] != ':'){aux[i]=data[i+3]; i++;}
-        step = (int) (atof(aux)-newFreq)/100;
+        centralFrequency = atof(aux);
+        step = (int) (centralFrequency-newFreq)/100;
 
         break;
     default:
