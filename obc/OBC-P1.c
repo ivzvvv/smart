@@ -224,20 +224,20 @@ getDownsampleFileName(char *buffer, int downsample){
       return 0;
     }
     char time_str[FILENAME_BUFFER_SIZE];
-    strftime(time_str, sizeof(time_str)*FILENAME_BUFFER_SIZE, "%Y-%m-%d %H:%M:%S", timeinfo);
+    strftime(time_str, sizeof(time_str)*FILENAME_BUFFER_SIZE, "%Y-%m-%d_%H-%M-%S", timeinfo);
     char aux[30];
 
     if(downsample){
-        sprintf(aux, "_DOWNSAMPLED_f=%.3f.bin", newFreq/1000000);
+        sprintf(aux, "_DOWNSAMPLED_f_%.3f.bin", newFreq/1000000);
     }
     else{
-        sprintf(aux, "RAW_f=%.3f.bin", newFreq/1000000);
+        sprintf(aux, "_RAW_f_%.3f.bin", newFreq/1000000);
     }
     //strcat(buffer, aux);
 
     /*  TODO: distinguish between downsample and raw for the filename */
-    char downsample_path[FILENAME_BUFFER_SIZE] = "downsampled/";
-    char raw_path[FILENAME_BUFFER_SIZE] = "raw/";
+    char downsample_path[FILENAME_BUFFER_SIZE] = "/mnt/OBC-SMART/downsampled/";//"downsampled/";
+    char raw_path[FILENAME_BUFFER_SIZE] = "/mnt/OBC-SMART/raw/";//"raw/";
     if(downsample){
         strcat(downsample_path, time_str);
         strcat(downsample_path, aux);
@@ -335,7 +335,8 @@ write_to_disk(short *xi, short *xq, int numSamples){
                 save_samples = fopen(filename_downsample, "ab");
                 fwrite(&out_i, sizeof(int16_t), 1, save_samples);
                 fwrite(&out_q, sizeof(int16_t), 1, save_samples);
-                fclose(save_samples);
+                chown(filename_downsample, 1000, 1000);
+		fclose(save_samples);
                 written_samples+=2;
             }
         }
@@ -525,6 +526,7 @@ StreamACallback(short *xi, short *xq, sdrplay_api_StreamCbParamsT *params, unsig
     getDownsampleFileName(filename_raw, 0);
     
     FILE *f_raw = fopen(filename_raw, "ab");
+    chown(filename_raw, 1000, 1000);
     for(int j = 0; j < numSamples; j++){
         fwrite(&xi[j], sizeof(int16_t), 1, f_raw);
         written_raw++;
