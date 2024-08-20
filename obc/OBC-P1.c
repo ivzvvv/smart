@@ -98,6 +98,8 @@ char filename_downsample[FILENAME_BUFFER_SIZE];
 char filename_raw[FILENAME_BUFFER_SIZE];
 int written_samples = 160000000; //start at 16M to create first file
 int written_raw = 16000000; // same as above
+bool newCentralFreq = false;
+
 
 void
 runSMARTExperiment(sdrplay_api_RxChannelParamsT *chParams){
@@ -141,10 +143,12 @@ runSMARTExperiment(sdrplay_api_RxChannelParamsT *chParams){
     
     while (1) 
     {   
-        printf("\e[1;1H\e[2J");
+        //printf("\e[1;1H\e[2J");
+        printf("\n\n");
         printf("     %s Connected to GS  [%ld s]           \n", connected_to_GS == 1 ? "" : "NOT", elapsed_seconds);
         printf("Current SDR Config:\n");
         printf("Central frequency: %.3f MHz\n", chParams->tunerParams.rfFreq.rfHz/1e6);
+        printf("Frequency of interest: %.3f MHz\n", centralFrequency/1e6);
         printf("Gain             : %i dB\n", chParams->tunerParams.gain.gRdB);
         printf("Sampling frequency: %.0f MSPS\n", chosenDevice->rspDuoSampleFreq/1e6);
         printf("Samples debug: %i\n", samples_debug/8000000);
@@ -209,14 +213,17 @@ cleanup_and_exit(){
 int 
 getDownsampleFileName(char *buffer, int downsample){
     current_time = time(NULL);
-
+    
+    
     if(downsample){
-        if (written_samples < 7812) // || time_since_last_file_creation > 5 s
+        if (written_samples < 7812 && !newCentralFreq) // || time_since_last_file_creation > 5 s
             return 1;
+        newCentralFreq = false;
     }
     else{
-        if (written_raw < 16000000) // || time_since_last_file_creation > 1 s
+        if (written_raw < 16000000 && !newCentralFreq) // || time_since_last_file_creation > 1 s
             return 1;
+        newCentralFreq = false;
     }
     //printf("Current Unix Timestamp: %ld\n", current_time);
     last_file_create = current_time;
@@ -440,7 +447,8 @@ process_data(const char *data, int data_len) {
         i=0; while(data[i+3] != ':'){aux[i]=data[i+3]; i++;}
         centralFrequency = atof(aux);
         step = (int) (centralFrequency-newFreq)/100;
-
+        newCentralFreq = true;
+        
         break;
     default:
         printf("Wrong format\n");
