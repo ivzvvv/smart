@@ -206,11 +206,11 @@ getDownsampleFileName(char *buffer, int downsample){
     current_time = time(NULL);
 
     if(downsample){
-        if (written_samples < 7812)
+        if (written_samples < 7812) // || time_since_last_file_creation > 5 s
             return 1;
     }
     else{
-        if (written_raw < 16000000)
+        if (written_raw < 16000000) // || time_since_last_file_creation > 1 s
             return 1;
     }
     //printf("Current Unix Timestamp: %ld\n", current_time);
