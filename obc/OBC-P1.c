@@ -36,6 +36,7 @@
 #define DEFAULT_SAMPLING_RATE 8000000.0
 #define DEFAULT_GAIN 40.0
 #define WRITE_TO_DISK_INTERVAL 5
+#define DEFAULT_STEP 1
 
 int getFileName(char *buffer, int downsample);
 void write_to_disk();
@@ -64,12 +65,14 @@ int curr = 0, curr_iq=0;
 int samples_debug = 0;
 
 int port = 9090;
-double newFreq = DEFAULT_CENTRAL_FREQ;
+double newFreqCarrier = DEFAULT_CENTRAL_FREQ;
 double centralFrequency = DEFAULT_CENTRAL_FREQ;
 double newSampling = DEFAULT_SAMPLING_RATE;
 double newGain = DEFAULT_GAIN;
 int newParam = 0;
 int step = 1; // 1=100Hz, 2=200Hz ...
+double newCentralFrequency = DEFAULT_CENTRAL_FREQ;
+int newStep = DEFAULT_STEP;
 
 filter_16 round1_i,round1_q;
 filter_16 round2_i,round2_q;
@@ -147,8 +150,8 @@ runSMARTExperiment(sdrplay_api_RxChannelParamsT *chParams){
         printf("\n\n");
         printf("     %s Connected to GS  [%ld s]           \n", connected_to_GS == 1 ? "" : "NOT", elapsed_seconds);
         printf("Current SDR Config:\n");
-        printf("Central frequency: %.3f MHz\n", chParams->tunerParams.rfFreq.rfHz/1e6);
-        printf("Frequency of interest: %.3f MHz\n", centralFrequency/1e6);
+        printf("Central frequency: %.6f MHz\n", chParams->tunerParams.rfFreq.rfHz/1e6);
+        printf("Frequency of interest: %.6f MHz\n", centralFrequency/1e6);
         printf("Gain             : %i dB\n", chParams->tunerParams.gain.gRdB);
         printf("Sampling frequency: %.0f MSPS\n", chosenDevice->rspDuoSampleFreq/1e6);
         printf("Samples debug: %i\n", samples_debug/8000000);
@@ -156,7 +159,7 @@ runSMARTExperiment(sdrplay_api_RxChannelParamsT *chParams){
         if ( newParam ){
             // newParam may generate race condition?
             newParam = 0;
-            chParams->tunerParams.rfFreq.rfHz = newFreq;
+            chParams->tunerParams.rfFreq.rfHz = newFreqCarrier;
             chParams->tunerParams.gain.gRdB = newGain;
             chosenDevice->rspDuoSampleFreq = newSampling;
 
@@ -165,6 +168,11 @@ runSMARTExperiment(sdrplay_api_RxChannelParamsT *chParams){
                 printf("sdrplay_api_Update sdrplay_api_Update_Tuner_Gr failed %s\n", sdrplay_api_GetErrorString(err));
                 break;
             }
+        }
+        if (newCentralFreq){
+            centralFrequency = newCentralFrequency;
+            step = newStep;
+            newCentralFreq = false;
         }
         
         t = (double)(time(NULL) - gs_reception_Timestamp);
@@ -216,14 +224,12 @@ getFileName(char *buffer, int downsample){
     
     
     if(downsample){
-        if (written_samples < 7812 && !newCentralFreq) // || time_since_last_file_creation > 5 s
+        if (written_samples < 7812) // || time_since_last_file_creation > 5 s
             return 1;
-        newCentralFreq = false;
     }
     else{
-        if (written_raw < 16000000 && !newCentralFreq) // || time_since_last_file_creation > 1 s
+        if (written_raw < 16000000) // || time_since_last_file_creation > 1 s
             return 1;
-        newCentralFreq = false;
     }
     //printf("Current Unix Timestamp: %ld\n", current_time);
     last_file_create = current_time;
@@ -237,19 +243,19 @@ getFileName(char *buffer, int downsample){
     }
     char time_str[FILENAME_BUFFER_SIZE];
     strftime(time_str, sizeof(time_str)*FILENAME_BUFFER_SIZE, "%Y-%m-%d_%H-%M-%S", timeinfo);
-    char aux[50];
+    char aux[100];
 
     if(downsample){
-        sprintf(aux, "_DOWNSAMPLED_f_%.3f.bin", centralFrequency/1000);
+        sprintf(aux, "_DOWNSAMPLED_f_%.6f.bin", centralFrequency/1000000);
     }
     else{
-        sprintf(aux, "_RAW_f_%.3f.bin", centralFrequency/1000);
+        sprintf(aux, "_RAW_f_%.6f.bin", centralFrequency/1000000);
     }
     //strcat(buffer, aux);
 
     /*  TODO: distinguish between downsample and raw for the filename */
-    char downsample_path[FILENAME_BUFFER_SIZE] = "/mnt/OBC-SMART/downsampled/";//"downsampled/";
-    char raw_path[FILENAME_BUFFER_SIZE] = "/mnt/OBC-SMART/raw/";//"raw/";
+    char downsample_path[FILENAME_BUFFER_SIZE] = "/mnt/GS-SMART/downsampled/";//"/mnt/OBC-SMART/downsampled/";
+    char raw_path[FILENAME_BUFFER_SIZE] = "/mnt/GS-SMART/raw/";//"/mnt/OBC-SMART/raw/";
     if(downsample){
         strcat(downsample_path, time_str);
         strcat(downsample_path, aux);
@@ -277,8 +283,14 @@ write_to_disk(short *xi, short *xq, int numSamples){
 
     for(int sample = 0; sample < numSamples; sample++){
         add_16(&round1_i, (int16_t)((float)IQ[sample]*sinCosTable[sinIndex])); add_16(&round1_q, (int16_t)((float)IQ[sample+1]*sinCosTable[cosIndex]));
-        sinIndex = sinIndex+step > 80000 ? sinIndex+step-80000 : sinIndex+step;
-        cosIndex = cosIndex+step > 80000 ? cosIndex+step-80000 : cosIndex+step;
+        if (step > 0){
+            sinIndex = sinIndex+step > 80000 ? sinIndex+step-80000 : sinIndex+step;
+            cosIndex = cosIndex+step > 80000 ? cosIndex+step-80000 : cosIndex+step;
+        }
+        else{
+            sinIndex = sinIndex+step < 0 ? sinIndex+step+80000 : sinIndex+step;
+            cosIndex = cosIndex+step < 0 ? cosIndex+step+80000 : cosIndex+step;
+        }
         //printf("samples_out %i \t sample %i\n", samples_out, sample);
         //printf("round1_i.curr_s = %i | round1_i.head = %i | round1_i.tail = %i \n", round1_i.curr_s, round1_i.head, round1_i.tail);
         //printf("round2_i.curr_s = %i | round2_i.head = %i | round2_i.tail = %i \n", round2_i.curr_s, round2_i.head, round2_i.tail);
@@ -415,7 +427,7 @@ process_data(const char *data, int data_len) {
         break;
     case 'F':
         i=0; while(data[i+3] != ':'){aux[i]=data[i+3]; i++;}
-        newFreq = atof(aux) > 2000000 ? atof(aux) : newFreq;
+        newFreqCarrier = atof(aux) > 2000000 ? atof(aux) : newFreqCarrier;
 
         gs_reception_Timestamp = time(NULL);
         newParam = 1;
@@ -445,10 +457,24 @@ process_data(const char *data, int data_len) {
         break;
     case 'C':
         i=0; while(data[i+3] != ':'){aux[i]=data[i+3]; i++;}
-        centralFrequency = atof(aux);
-        step = (int) (centralFrequency-newFreq)/100;
-        newCentralFreq = true;
+        
+        // only change new central frequency if inside bandwidth
+        double aux_diff = atof(aux)-newFreqCarrier;
+        if (aux_diff < 0){
+            if(aux_diff < -DEFAULT_SAMPLING_RATE/2)
+                break;
+        }
+        else{
+            if(aux_diff > DEFAULT_SAMPLING_RATE/2)
+                break;
+        }
 
+        newCentralFrequency = atof(aux);
+        newStep = (int) (newCentralFrequency-newFreqCarrier)/100;
+        
+        newCentralFreq = true;
+        
+        gs_reception_Timestamp = time(NULL);
         break;
     default:
         printf("Wrong format\n");
