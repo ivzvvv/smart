@@ -34,6 +34,7 @@
 #define RX_TIME_INTERVAL_THRESHOLD 10
 #define DEFAULT_CENTRAL_FREQ 100000000.0
 #define DEFAULT_SAMPLING_RATE 8000000.0
+#define DEFAULT_GAIN 40.0
 #define WRITE_TO_DISK_INTERVAL 5
 
 int getDownsampleFileName(char *buffer, int downsample);
@@ -65,6 +66,7 @@ int samples_debug = 0;
 int port = 9090;
 double newFreq = DEFAULT_CENTRAL_FREQ;
 double newSampling = DEFAULT_SAMPLING_RATE;
+double newGain = DEFAULT_GAIN;
 int newParam = 0;
 
 filter_16 round1_i,round1_q;
@@ -149,6 +151,7 @@ runSMARTExperiment(sdrplay_api_RxChannelParamsT *chParams){
             // newParam may generate race condition?
             newParam = 0;
             chParams->tunerParams.rfFreq.rfHz = newFreq;
+            chParams->tunerParams.gain.gRdB = newGain;
             chosenDevice->rspDuoSampleFreq = newSampling;
 
             if ((err = sdrplay_api_Update(chosenDevice->dev, chosenDevice->tuner, sdrplay_api_Update_Tuner_Frf, sdrplay_api_Update_Ext1_None)) != sdrplay_api_Success)
@@ -422,6 +425,13 @@ void process_data(const char *data, int data_len) {
         break;
     case 'R':
         system("systemctl start restart-sdr-usb.service");
+        break;
+    case 'G':
+        i=0; while(data[i+3] != ':'){aux[i]=data[i+3]; i++;}
+        newGain = atof(aux) < 60 ? atof(aux) : newGain;
+
+        gs_reception_Timestamp = time(NULL);
+        newParam = 1;
         break;
     default:
         printf("Wrong format\n");
