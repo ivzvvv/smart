@@ -164,7 +164,8 @@ This automounts the external SSD to the ```/mnt/OBC-SMART``` folder on startup. 
 - ```rsync``` service
 - copy ```/rsync/rsyncd.conf``` to ```/etc/rsyncd.conf``` in the OBC - file contains configuration parameters for the rsync service
 - copy ```/rsync/rsyncd_users.db``` to ```/etc/rsyncd_users.db``` in the OBC - file contains ```user:password``` of the users allowed to login.
-- in the MCC run ```rsync -avz --password-file=/path/to/password smart@<obc ip>::share <destination folder>``` to retrieve the synced folder from the OBC to the MCC.
+- in the MCC run ```rsync -avz --password-file=/path/to/password smart@<obc ip>::share <destination folder>``` to retrieve the synced folder from the OBC to the MCC. This can be used in a while loop and called every second.
+
 
 --- 
 
@@ -176,9 +177,15 @@ TODO
 
 #### End of experiment Shutdown Procedures
 
-TODO
+TODO: ```shutdown_experiment.service```
 
+Set variable "$EXPERIMENT_ENDEND" to 1 (echo "export EXPERIMENT_ENDED=1 >> ~/.profile) and enable and start ```shutdown_experiment.service```.
+
+```shutdown_experiment.service```:
 - Stop and disable ```obc-p1.service```
 - Stop and disable ```start_gpsd.service```
 - Unmount SSD
+- Sleep 15 s
 - Shutdown Pi
+
+To reverse the shutdown 10s after startup, on startup stop ```shutdown_experiment.service```.
