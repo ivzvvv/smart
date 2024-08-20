@@ -37,7 +37,7 @@
 #define DEFAULT_GAIN 40.0
 #define WRITE_TO_DISK_INTERVAL 5
 
-int getDownsampleFileName(char *buffer, int downsample);
+int getFileName(char *buffer, int downsample);
 void write_to_disk();
 typedef void (*data_callback_t)(void*, const char*, int);
 void process_data(const char *data, int data_len);
@@ -211,7 +211,7 @@ cleanup_and_exit(){
 }
 
 int 
-getDownsampleFileName(char *buffer, int downsample){
+getFileName(char *buffer, int downsample){
     current_time = time(NULL);
     
     
@@ -272,7 +272,7 @@ getDownsampleFileName(char *buffer, int downsample){
 void 
 write_to_disk(short *xi, short *xq, int numSamples){
 
-    if(!getDownsampleFileName(filename_downsample, 1))
+    if(!getFileName(filename_downsample, 1))
         return;
 
     for(int sample = 0; sample < numSamples; sample++){
@@ -448,7 +448,7 @@ process_data(const char *data, int data_len) {
         centralFrequency = atof(aux);
         step = (int) (centralFrequency-newFreq)/100;
         newCentralFreq = true;
-        
+
         break;
     default:
         printf("Wrong format\n");
@@ -550,7 +550,7 @@ StreamACallback(short *xi, short *xq, sdrplay_api_StreamCbParamsT *params, unsig
     //if(time_since_last_disk_write() > WRITE_TO_DISK_INTERVAL)
     write_to_disk(xi, xq, numSamples);
 
-    getDownsampleFileName(filename_raw, 0);
+    getFileName(filename_raw, 0);
     
     FILE *f_raw = fopen(filename_raw, "ab");
     chown(filename_raw, 1000, 1000);
