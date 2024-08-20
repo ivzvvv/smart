@@ -254,8 +254,8 @@ getFileName(char *buffer, int downsample){
     //strcat(buffer, aux);
 
     /*  TODO: distinguish between downsample and raw for the filename */
-    char downsample_path[FILENAME_BUFFER_SIZE] = "/mnt/GS-SMART/downsampled/";//"/mnt/OBC-SMART/downsampled/";
-    char raw_path[FILENAME_BUFFER_SIZE] = "/mnt/GS-SMART/raw/";//"/mnt/OBC-SMART/raw/";
+    char downsample_path[FILENAME_BUFFER_SIZE] = "/mnt/OBC-SMART/downsampled/";//"/mnt/OBC-SMART/downsampled/";
+    char raw_path[FILENAME_BUFFER_SIZE] = "/mnt/OBC-SMART/raw/";//"/mnt/OBC-SMART/raw/";
     if(downsample){
         strcat(downsample_path, time_str);
         strcat(downsample_path, aux);
@@ -473,7 +473,7 @@ process_data(const char *data, int data_len) {
         newStep = (int) (newCentralFrequency-newFreqCarrier)/100;
         
         newCentralFreq = true;
-        
+
         gs_reception_Timestamp = time(NULL);
         break;
     default:
