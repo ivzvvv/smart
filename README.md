@@ -46,12 +46,12 @@ Available commands:
 | command | name | value |
 |-|-|-|
 | H | Heartbeat | no value |
-| F | Tuner central frequency| in Hz |
+| F | Tuner carrier frequency| in Hz |
 | S | Sampling Frequency | in Hz |
 | U | Shutdown SDR USB port | no value |
 | R | Shutdown and restart SDR USB port | no value |
 | Z | (TODO) End of flight experiment shutdown | no value |
-
+| C | Central frequency we are interested in | in Hz |
 ---
 - [ ] OBC-P4.c
     - Interfaces with GNSS Receiver

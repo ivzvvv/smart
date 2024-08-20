@@ -68,6 +68,7 @@ double newFreq = DEFAULT_CENTRAL_FREQ;
 double newSampling = DEFAULT_SAMPLING_RATE;
 double newGain = DEFAULT_GAIN;
 int newParam = 0;
+int step = 1; // 1=100Hz, 2=200Hz ...
 
 filter_16 round1_i,round1_q;
 filter_16 round2_i,round2_q;
@@ -268,8 +269,8 @@ write_to_disk(short *xi, short *xq, int numSamples){
 
     for(int sample = 0; sample < numSamples; sample++){
         add_16(&round1_i, (int16_t)((float)IQ[sample]*sinCosTable[sinIndex])); add_16(&round1_q, (int16_t)((float)IQ[sample+1]*sinCosTable[cosIndex]));
-        sinIndex = sinIndex+1 == 80000 ? 0 : sinIndex+1;
-        cosIndex = cosIndex+1 == 80000 ? 0 : cosIndex+1;
+        sinIndex = sinIndex+step > 80000 ? sinIndex+step-80000 : sinIndex+step;
+        cosIndex = cosIndex+step > 80000 ? cosIndex+step-80000 : cosIndex+step;
         //printf("samples_out %i \t sample %i\n", samples_out, sample);
         //printf("round1_i.curr_s = %i | round1_i.head = %i | round1_i.tail = %i \n", round1_i.curr_s, round1_i.head, round1_i.tail);
         //printf("round2_i.curr_s = %i | round2_i.head = %i | round2_i.tail = %i \n", round2_i.curr_s, round2_i.head, round2_i.tail);
@@ -432,6 +433,11 @@ void process_data(const char *data, int data_len) {
 
         gs_reception_Timestamp = time(NULL);
         newParam = 1;
+        break;
+    case 'C':
+        i=0; while(data[i+3] != ':'){aux[i]=data[i+3]; i++;}
+        step = (int) (atof(aux)-newFreq)/100;
+
         break;
     default:
         printf("Wrong format\n");
