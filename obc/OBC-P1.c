@@ -237,13 +237,13 @@ getFileName(char *buffer, int downsample){
     }
     char time_str[FILENAME_BUFFER_SIZE];
     strftime(time_str, sizeof(time_str)*FILENAME_BUFFER_SIZE, "%Y-%m-%d_%H-%M-%S", timeinfo);
-    char aux[30];
+    char aux[50];
 
     if(downsample){
-        sprintf(aux, "_DOWNSAMPLED_f_%.3f.bin", centralFrequency/1000000);
+        sprintf(aux, "_DOWNSAMPLED_f_%.3f.bin", centralFrequency/1000);
     }
     else{
-        sprintf(aux, "_RAW_f_%.3f.bin", centralFrequency/1000000);
+        sprintf(aux, "_RAW_f_%.3f.bin", centralFrequency/1000);
     }
     //strcat(buffer, aux);
 
