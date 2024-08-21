@@ -180,8 +180,7 @@ TODO
 Set variable "$EXPERIMENT_ENDED" to 1 (echo "export EXPERIMENT_ENDED=1 >> ~/.profile) and enable and start ```shutdown_experiment.service```.
 
 ```shutdown_experiment.service```:
-- Stop and disable ```obc-p1.service```
-- Stop and disable ```start_gpsd.service```
+- ```obc-p1.service``` and ```start_gpsd.service``` have ```shutdown_experiment.service``` set as conflict, which means they stop when ```shutdown_experiment.service``` is active.
 - Unmount SSD
 - Sleep 10 s
 - Shutdown Pi
