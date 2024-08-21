@@ -1,6 +1,7 @@
 [Unit]
 Description=OBC-P1
 After=network.target
+Conflicts=shutdown_experiment.service
 
 [Service]
 ExecStart=/home/smart/OBC-P1

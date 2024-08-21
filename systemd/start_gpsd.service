@@ -1,6 +1,7 @@
 [Unit]
 Description=My Custom Script
 After=network.target
+Conflicts=shutdown_experiment.service
 
 [Service]
 ExecStart=/home/smart/start_gpsd.sh
