@@ -1,0 +1,11 @@
+[Unit]
+Description=Shutdown Experiment
+After=network.target
+
+[Service]
+ExecStart=/home/smart/shutdown_experiment.sh
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target

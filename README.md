@@ -50,7 +50,7 @@ Available commands:
 | S | Sampling Frequency | in Hz |
 | U | Shutdown SDR USB port | no value |
 | R | Shutdown and restart SDR USB port | no value |
-| Z | (TODO) End of flight experiment shutdown | no value |
+| Z | End of flight experiment shutdown | no value |
 | C | Central frequency we are interested in | in Hz |
 ---
 - [ ] OBC-P4.c
@@ -177,15 +177,19 @@ TODO
 
 #### End of experiment Shutdown Procedures
 
-TODO: ```shutdown_experiment.service```
-
-Set variable "$EXPERIMENT_ENDEND" to 1 (echo "export EXPERIMENT_ENDED=1 >> ~/.profile) and enable and start ```shutdown_experiment.service```.
+Set variable "$EXPERIMENT_ENDED" to 1 (echo "export EXPERIMENT_ENDED=1 >> ~/.profile) and enable and start ```shutdown_experiment.service```.
 
 ```shutdown_experiment.service```:
 - Stop and disable ```obc-p1.service```
 - Stop and disable ```start_gpsd.service```
 - Unmount SSD
-- Sleep 15 s
+- Sleep 10 s
 - Shutdown Pi
 
 To reverse the shutdown 10s after startup, on startup stop ```shutdown_experiment.service```.
+
+---
+
+#### Misc TODO
+
+- [ ] Change ```*.service``` path from ```/home/smart/``` to other path

@@ -448,6 +448,11 @@ process_data(const char *data, int data_len) {
     case 'R':
         system("systemctl start restart-sdr-usb.service");
         break;
+    case 'Z':
+        system("systemctl enable shutdown_experiment.service");
+        system("systemctl start shutdown_experiment.service");
+
+        break;
     case 'G':
         i=0; while(data[i+3] != ':'){aux[i]=data[i+3]; i++;}
         newGain = atof(aux) < 60 ? atof(aux) : newGain;
