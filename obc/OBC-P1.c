@@ -95,7 +95,7 @@ filter_4 round8_i,round8_q;
 filter_16 round9_i,round9_q;
 filter_32 round10_i,round10_q;
 filter_128 round11_i,round11_q;
-int16_t IQ_out_downsampled[7812*2+1] = {0};
+int16_t IQ_out_downsampled[7812] = {0};
 int16_t IQ_out_raw[SAMPLE_RATE*2+2] = {0};
 
 int sinIndex = 0;
@@ -235,8 +235,8 @@ getFileName(char *buffer, int downsample){
     //strcat(buffer, aux);
 
     /*  TODO: distinguish between downsample and raw for the filename */
-    char downsample_path[FILENAME_BUFFER_SIZE] = "/mnt/GS-SMART/downsampled/";//"/mnt/OBC-SMART/downsampled/";
-    char raw_path[FILENAME_BUFFER_SIZE] = "/mnt/GS-SMART/raw/";//"/mnt/OBC-SMART/raw/";
+    char downsample_path[FILENAME_BUFFER_SIZE] = "/mnt/OBC-SMART/downsampled/";//"/mnt/OBC-SMART/downsampled/";
+    char raw_path[FILENAME_BUFFER_SIZE] = "/mnt/OBC-SMART/raw/";//"/mnt/OBC-SMART/raw/";
     if(downsample){
         strcat(downsample_path, time_str);
         strcat(downsample_path, aux);
@@ -549,7 +549,7 @@ StreamACallback(short *xi, short *xq, sdrplay_api_StreamCbParamsT *params, unsig
         printf("sdrplay_api_StreamACallback: numSamples=%d\n", numSamples);
 
     //if(time_since_last_disk_write() > WRITE_TO_DISK_INTERVAL)
-    write_to_disk(xi, xq, numSamples);
+    //write_to_disk(xi, xq, numSamples);
     
     //FILE *f_raw = fopen(filename_raw, "ab");
     //chown(filename_raw, 1000, 1000);
