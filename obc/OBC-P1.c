@@ -289,8 +289,8 @@ getFileName(char *buffer, int downsample){
 void 
 write_to_disk(short *xi, short *xq, int numSamples){
 
-    if(!getFileName(filename_downsample, 1))
-        return;
+    //if(!getFileName(filename_downsample, 1))
+    //    return;
 
     for(int sample = 0; sample < numSamples; sample++){
         //add_16(&round1_i, (int16_t)((float)IQ[sample]*sinCosTable[sinIndex])); add_16(&round1_q, (int16_t)((float)IQ[sample+1]*sinCosTable[cosIndex]));
@@ -367,18 +367,19 @@ write_to_disk(short *xi, short *xq, int numSamples){
 
         if (round11_i.next_OK){
             round11_i.next_OK = false;
+            IQ_out_downsampled[samples_out] = mult_128(round11_i);
+            samples_out++;
+            IQ_out_downsampled[samples_out] = mult_128(round11_q);
+            samples_out++;
             if(samples_out > 7905){
                 FILE *save_samples;
+                getFileName(filename_downsample, 1);
                 save_samples = fopen(filename_downsample, "ab");
                 fwrite(IQ_out_downsampled, sizeof(IQ_out_downsampled), 1, save_samples);
                 chown(filename_downsample, 1000, 1000);
 		        fclose(save_samples);
                 samples_out = 0;
             }
-            IQ_out_downsampled[samples_out] = mult_128(round11_i);
-            samples_out++;
-            IQ_out_downsampled[samples_out] = mult_128(round11_q);
-            samples_out++;
             /*int16_t out_i = mult_128(round11_i);
             int16_t out_q = mult_128(round11_q);
             if(connected_to_GS == 1){
@@ -620,10 +621,11 @@ StreamACallback(short *xi, short *xq, sdrplay_api_StreamCbParamsT *params, unsig
     }
     //fclose(f_raw);
 
-    if(samples_raw == 16000000){
+    if(samples_raw > 16000000){
         samples_raw = 0;
         FILE *f_raw = fopen(filename_raw, "wb");
         fwrite(IQ_out_raw, sizeof(IQ_out_raw), 1, f_raw);
+        chown(filename_raw, 1000, 1000);
         fclose(f_raw);
     }
     //printf("Received samples %i\n", numSamples);
