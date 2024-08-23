@@ -95,8 +95,8 @@ filter_4 round8_i,round8_q;
 filter_16 round9_i,round9_q;
 filter_32 round10_i,round10_q;
 filter_128 round11_i,round11_q;
-int16_t IQ_out_downsampled[SAMPLE_RATE*2+1] = {0};
-int16_t IQ_out_raw[7812*2+1] = {0};
+int16_t IQ_out_downsampled[7812*2+1] = {0};
+int16_t IQ_out_raw[SAMPLE_RATE*2+2] = {0};
 
 int sinIndex = 0;
 int cosIndex = 20000;
@@ -107,9 +107,8 @@ struct sockaddr_in servaddr_data;
 time_t last_file_create;
 time_t current_time ;
 
-// TODO: Start filename with "/home/smart/rlsync/"
-char filename_downsample[FILENAME_BUFFER_SIZE];
-char filename_raw[FILENAME_BUFFER_SIZE];
+char filename_downsample[FILENAME_BUFFER_SIZE] = {0};
+char filename_raw[FILENAME_BUFFER_SIZE] = {0};
 int written_samples = 160000000; //start at 16M to create first file
 int written_raw = 16000000; // same as above
 bool newCentralFreq = false;
@@ -120,26 +119,6 @@ runSMARTExperiment(sdrplay_api_RxChannelParamsT *chParams){
     sdrplay_api_ErrT err;
     long int elapsed_seconds = 0;
     gs_reception_Timestamp = clock();
-
-    // change this later
-    
-      /*
-    // clear servaddr 
-    bzero(&servaddr_data, sizeof(servaddr_data)); 
-    servaddr_data.sin_addr.s_addr = inet_addr("127.0.0.1"); 
-    servaddr_data.sin_port = htons(5000); 
-    servaddr_data.sin_family = AF_INET; 
-      
-    // create datagram socket 
-    sockfd_data = socket(AF_INET, SOCK_DGRAM, 0); 
-      
-    // connect to server 
-    if(connect(sockfd_data, (struct sockaddr *)&servaddr_data, sizeof(servaddr_data)) < 0) 
-    { 
-        printf("\n Error : Connect Failed \n"); 
-        exit(0); 
-    } */
-    //------------
     
     //  Not needed, default is 8M but good to have for debug
     chParams->tunerParams.rfFreq.rfHz = DEFAULT_CENTRAL_FREQ;
@@ -234,15 +213,6 @@ getFileName(char *buffer, int downsample){
     current_time = time(NULL);
     
     
-    /*if(downsample){
-        if (written_samples < 7812) // || time_since_last_file_creation > 5 s
-            return 1;
-    }
-    else{
-        if (written_raw < 16000000) // || time_since_last_file_creation > 1 s
-            return 1;
-    }*/
-    //printf("Current Unix Timestamp: %ld\n", current_time);
     last_file_create = current_time;
     struct tm * timeinfo;
 
@@ -254,7 +224,7 @@ getFileName(char *buffer, int downsample){
     }
     char time_str[FILENAME_BUFFER_SIZE];
     strftime(time_str, sizeof(time_str)*FILENAME_BUFFER_SIZE, "%Y-%m-%d_%H-%M-%S", timeinfo);
-    char aux[100];
+    char aux[256] = {0};
 
     if(downsample){
         sprintf(aux, "_DOWNSAMPLED_f_%.6f.bin", centralFrequency/1000000);
@@ -265,8 +235,8 @@ getFileName(char *buffer, int downsample){
     //strcat(buffer, aux);
 
     /*  TODO: distinguish between downsample and raw for the filename */
-    char downsample_path[FILENAME_BUFFER_SIZE] = "/mnt/OBC-SMART/downsampled/";//"/mnt/OBC-SMART/downsampled/";
-    char raw_path[FILENAME_BUFFER_SIZE] = "/mnt/OBC-SMART/raw/";//"/mnt/OBC-SMART/raw/";
+    char downsample_path[FILENAME_BUFFER_SIZE] = "/mnt/GS-SMART/downsampled/";//"/mnt/OBC-SMART/downsampled/";
+    char raw_path[FILENAME_BUFFER_SIZE] = "/mnt/GS-SMART/raw/";//"/mnt/OBC-SMART/raw/";
     if(downsample){
         strcat(downsample_path, time_str);
         strcat(downsample_path, aux);
@@ -277,7 +247,7 @@ getFileName(char *buffer, int downsample){
         strcat(raw_path, aux);
         sprintf(buffer, "%s", raw_path);
     }
-    
+
    if(downsample)
         written_samples = 0;
     else
@@ -394,33 +364,6 @@ write_to_disk(short *xi, short *xq, int numSamples){
         
         samples_debug++;
     }
-        /*
-    if(connected_to_GS == 1){
-        //printf("Downsample and send to GS...\n");
-        //FILE *save_samples;
-        //save_samples = fopen(filename, "wb");
-        //fwrite(IQ, 1, sizeof(short)*chosenDevice->rspDuoSampleFreq*2, save_samples);
-        //printf("[%s] Saved data\n", filename);
-        //fclose(save_samples);
-        // Open socket to GS
-        
-      
-        // request to send datagram 
-        // no need to specify server address in sendto 
-        // connect stores the peers IP and port 
-        
-        // Perform downsample
-        
-
-        
-        // Send data
-        //printf("samples_out: %i\n", samples_out);
-        sendto(sockfd_data, IQ_out_downsampled, sizeof(int16_t)*samples_out, 0, (struct sockaddr*)NULL, sizeof(servaddr_data)); 
-        samples_out = 0;
-        //printf("Sent to GS\n");
-    }
-        */
-       
 
     curr_file++;
     if (curr_file == 10){
@@ -607,8 +550,6 @@ StreamACallback(short *xi, short *xq, sdrplay_api_StreamCbParamsT *params, unsig
 
     //if(time_since_last_disk_write() > WRITE_TO_DISK_INTERVAL)
     write_to_disk(xi, xq, numSamples);
-
-    getFileName(filename_raw, 0);
     
     //FILE *f_raw = fopen(filename_raw, "ab");
     //chown(filename_raw, 1000, 1000);
@@ -617,16 +558,21 @@ StreamACallback(short *xi, short *xq, sdrplay_api_StreamCbParamsT *params, unsig
         samples_raw++;
         IQ_out_raw[samples_raw] = xq[j];
         samples_raw++;
+        //printf("samples_raw %i\n", samples_raw);
+
+        if(samples_raw >= 16000000){
+            getFileName(filename_raw, 0);
+            printf("Opening file with path %s\n", filename_raw);
+            FILE *f_raw = fopen(filename_raw, "wb");
+            fwrite(IQ_out_raw, sizeof(int16_t)*samples_raw, 1, f_raw);
+            samples_raw = 0;
+            chown(filename_raw, 1000, 1000);
+            fclose(f_raw);
+        }
     }
     //fclose(f_raw);
 
-    if(samples_raw > 16000000){
-        samples_raw = 0;
-        FILE *f_raw = fopen(filename_raw, "wb");
-        fwrite(IQ_out_raw, sizeof(IQ_out_raw), 1, f_raw);
-        chown(filename_raw, 1000, 1000);
-        fclose(f_raw);
-    }
+    
     //printf("Received samples %i\n", numSamples);
     //sleep(1);
     // Process stream callback data here
