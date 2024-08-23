@@ -640,7 +640,7 @@ StreamACallback(short *xi, short *xq, sdrplay_api_StreamCbParamsT *params, unsig
             if(samples_out > 7812){
                 if(connected_to_GS == 1){
                     FILE *save_samples;
-                    getFileName(filename_downsample, 0);
+                    getFileName(filename_downsample, 1);
                     printf("Opening file with path %s\n", filename_downsample);
                     save_samples = fopen(filename_downsample, "wb");
                     fwrite(IQ_out_downsampled, sizeof(IQ_out_downsampled), 1, save_samples);
