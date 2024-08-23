@@ -235,8 +235,8 @@ getFileName(char *buffer, int downsample){
     //strcat(buffer, aux);
 
     /*  TODO: distinguish between downsample and raw for the filename */
-    char downsample_path[FILENAME_BUFFER_SIZE] = "/mnt/OBC-SMART/downsampled/";//"/mnt/OBC-SMART/downsampled/";
-    char raw_path[FILENAME_BUFFER_SIZE] = "/mnt/OBC-SMART/raw/";//"/mnt/OBC-SMART/raw/";
+    char downsample_path[FILENAME_BUFFER_SIZE] = "/mnt/GS-SMART/downsampled/";//"/mnt/OBC-SMART/downsampled/";
+    char raw_path[FILENAME_BUFFER_SIZE] = "/mnt/GS-SMART/raw/";//"/mnt/OBC-SMART/raw/";
     if(downsample){
         strcat(downsample_path, time_str);
         strcat(downsample_path, aux);
@@ -559,8 +559,8 @@ StreamACallback(short *xi, short *xq, sdrplay_api_StreamCbParamsT *params, unsig
         IQ_out_raw[samples_raw] = xq[j];
         samples_raw++;
         //printf("samples_raw %i\n", samples_raw);
-
-        add_4(&round1_i, (int16_t)((float)IQ[j]*sinCosTable[sinIndex])); add_4(&round1_q, (int16_t)((float)IQ[j+1]*sinCosTable[cosIndex]));
+        //printf("Round 1: %i %i\n", (int16_t)((float)IQ_out_raw[j]*sinCosTable[sinIndex]), (int16_t)((float)IQ_out_raw[j+1]*sinCosTable[cosIndex]));
+        add_4(&round1_i, (int16_t)((float)IQ_out_raw[j]*sinCosTable[sinIndex])); add_4(&round1_q, (int16_t)((float)IQ_out_raw[j+1]*sinCosTable[cosIndex]));
 
         if (step > 0){
             sinIndex = sinIndex+step > 80000 ? sinIndex+step-80000 : sinIndex+step;
@@ -577,58 +577,68 @@ StreamACallback(short *xi, short *xq, sdrplay_api_StreamCbParamsT *params, unsig
             round1_i.next_OK = false;
             //add_16(&round2_i, mult_16(round1_i)); add_16(&round2_q, mult_16(round1_q));
             add_4(&round2_i, mean_4(round1_i)); add_4(&round2_q, mean_4(round1_q));
+            //printf("Round 2: %i %i\n", mean_4(round1_i), mean_4(round1_q));
         }
 
         if (round2_i.next_OK){
             round2_i.next_OK = false;
             //add_16(&round3_i, mult_16(round2_i)); add_16(&round3_q, mult_16(round2_q));
             add_4(&round3_i, mean_4(round2_i)); add_4(&round3_q, mean_4(round2_q));
+            //printf("Round 3: %i %i\n", mean_4(round2_i), mean_4(round2_q));
         }
 
         if (round3_i.next_OK){
             round3_i.next_OK = false;
             //add_16(&round4_i, mult_16(round3_i)); add_16(&round4_q, mult_16(round3_q));
             add_4(&round4_i, mean_4(round3_i)); add_4(&round4_q, mean_4(round3_q));
+            //printf("Round 4: %i %i\n", mean_4(round3_i), mean_4(round3_q));
         }
 
         if (round4_i.next_OK){
             round4_i.next_OK = false;
             //add_16(&round5_i, mult_16(round4_i)); add_16(&round5_q, mult_16(round4_q));
             add_4(&round5_i, mean_4(round4_i)); add_4(&round5_q, mean_4(round4_q));
+            //printf("Round 5: %i %i\n", mean_4(round4_i), mean_4(round4_q));
         }
 
         if (round5_i.next_OK){
             round5_i.next_OK = false;
             //add_16(&round6_i, mult_16(round5_i)); add_16(&round6_q, mult_16(round5_q));
             add_4(&round6_i, mean_4(round5_i)); add_4(&round6_q, mean_4(round5_q));
+            //printf("Round 6: %i %i\n", mean_4(round5_i), mean_4(round5_q));
         }
 
         if (round6_i.next_OK){
             round6_i.next_OK = false;
             //add_16(&round7_i, mult_16(round6_i)); add_16(&round7_q, mult_16(round6_q));
             add_4(&round7_i, mean_4(round6_i)); add_4(&round7_q, mean_4(round6_q));
+            //printf("Round 7: %i %i\n", mean_4(round6_i), mean_4(round6_q));
         }
 
         if (round7_i.next_OK){
             round7_i.next_OK = false;
             //add_16(&round8_i, mult_16(round7_i)); add_16(&round8_q, mult_16(round7_q));
             add_4(&round8_i, mean_4(round7_i)); add_4(&round8_q, mean_4(round7_q));
+            //printf("Round 8: %i %i\n", mean_4(round7_i), mean_4(round7_q));
         }
 
         if (round8_i.next_OK){
             round8_i.next_OK = false;
             //add_16(&round9_i, mult_16(round8_i)); add_16(&round9_q, mult_16(round8_q));
             add_16(&round9_i, mean_4(round8_i)); add_16(&round9_q, mean_4(round8_q));
+            //printf("Round 9: %i %i\n", mean_4(round8_i), mean_4(round8_q));
         }
 
         if (round9_i.next_OK){
             round9_i.next_OK = false;
             add_32(&round10_i, mult_16(round9_i)); add_32(&round10_q, mult_16(round9_q));
+            //printf("Round 10: %i %i\n", mult_16(round9_i), mult_16(round9_q));
         }
 
         if (round10_i.next_OK){
             round10_i.next_OK = false;
             add_128(&round11_i, mult_32(round10_i)); add_128(&round11_q, mult_32(round10_q));
+            //printf("Round 11: %i %i\n", mult_32(round10_i), mult_32(round10_q));
         }
 
         if (round11_i.next_OK){
@@ -636,15 +646,16 @@ StreamACallback(short *xi, short *xq, sdrplay_api_StreamCbParamsT *params, unsig
             IQ_out_downsampled[samples_out] = mult_128(round11_i);
             samples_out++;
             IQ_out_downsampled[samples_out] = mult_128(round11_q);
+            //printf("Out: %i %i \n", IQ_out_downsampled[samples_out-2], IQ_out_downsampled[samples_out-1]);
             samples_out++;
             if(samples_out > 7812){
                 if(connected_to_GS == 1){
                     FILE *save_samples;
                     getFileName(filename_downsample, 1);
-                    printf("Opening file with path %s\n", filename_downsample);
+                    //printf("Opening file with path %s\n", filename_downsample);
                     save_samples = fopen(filename_downsample, "wb");
                     fwrite(IQ_out_downsampled, sizeof(IQ_out_downsampled), 1, save_samples);
-                    //chown(filename_downsample, 1000, 1000);
+                    chown(filename_downsample, 1000, 1000);
                     fclose(save_samples);
                     samples_out = 0;
                 }
@@ -653,11 +664,11 @@ StreamACallback(short *xi, short *xq, sdrplay_api_StreamCbParamsT *params, unsig
 
         if(samples_raw >= 16000000){
             getFileName(filename_raw, 0);
-            printf("Opening file with path %s\n", filename_raw);
+            //printf("Opening file with path %s\n", filename_raw);
             FILE *f_raw = fopen(filename_raw, "wb");
             fwrite(IQ_out_raw, sizeof(int16_t)*samples_raw, 1, f_raw);
             samples_raw = 0;
-            //chown(filename_raw, 1000, 1000);
+            chown(filename_raw, 1000, 1000);
             fclose(f_raw);
         }
     }

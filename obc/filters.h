@@ -70,7 +70,7 @@ int16_t mult_16(filter_16 filter){
     for( int i = 1; i < 16; i++){
         aux += filter.buf[i]*fir_16[i];
     }
-    return aux;
+    return aux/1021;
 }
 
 int16_t mult_32(filter_32 filter){
@@ -78,7 +78,7 @@ int16_t mult_32(filter_32 filter){
     for( int i = 1; i < 32; i++){
         aux += filter.buf[i]*fir_32[i];
     }
-    return aux;
+    return aux/1089;
 }
 
 int16_t mult_128(filter_128 filter){
@@ -86,12 +86,12 @@ int16_t mult_128(filter_128 filter){
     for( int i = 7; i < 121; i++){
         aux += filter.buf[i]*fir_128[i];
     }
-    aux /= 1024;
+    aux /= 1021;
     return aux;
 }
 
 int16_t mean_4(filter_4 filter){
-    int32_t aux = 0;
+    int16_t aux = 0;
     for(int i=0; i < 4; i++){
         aux += filter.buf[i];
     }
