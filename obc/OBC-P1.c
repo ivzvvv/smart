@@ -289,8 +289,8 @@ getFileName(char *buffer, int downsample){
 void 
 write_to_disk(short *xi, short *xq, int numSamples){
 
-    //if(!getFileName(filename_downsample, 1))
-    //    return;
+    if(!getFileName(filename_downsample, 1))
+        return;
 
     for(int sample = 0; sample < numSamples; sample++){
         //add_16(&round1_i, (int16_t)((float)IQ[sample]*sinCosTable[sinIndex])); add_16(&round1_q, (int16_t)((float)IQ[sample+1]*sinCosTable[cosIndex]));
@@ -373,7 +373,7 @@ write_to_disk(short *xi, short *xq, int numSamples){
             samples_out++;
             if(samples_out > 7905){
                 FILE *save_samples;
-                getFileName(filename_downsample, 1);
+                
                 save_samples = fopen(filename_downsample, "ab");
                 fwrite(IQ_out_downsampled, sizeof(IQ_out_downsampled), 1, save_samples);
                 chown(filename_downsample, 1000, 1000);
