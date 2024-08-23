@@ -367,7 +367,7 @@ write_to_disk(short *xi, short *xq, int numSamples){
 
         if (round11_i.next_OK){
             round11_i.next_OK = false;
-            if(samples_out > 16000000){
+            if(samples_out > 7905){
                 FILE *save_samples;
                 save_samples = fopen(filename_downsample, "ab");
                 fwrite(IQ_out_downsampled, sizeof(IQ_out_downsampled), 1, save_samples);
