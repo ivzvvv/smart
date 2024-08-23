@@ -638,25 +638,17 @@ StreamACallback(short *xi, short *xq, sdrplay_api_StreamCbParamsT *params, unsig
             IQ_out_downsampled[samples_out] = mult_128(round11_q);
             samples_out++;
             if(samples_out > 7812){
-                FILE *save_samples;
-                getFileName(filename_downsample, 0);
-                save_samples = fopen(filename_downsample, "wb");
-                fwrite(IQ_out_downsampled, sizeof(IQ_out_downsampled), 1, save_samples);
-                chown(filename_downsample, 1000, 1000);
-		        fclose(save_samples);
-                samples_out = 0;
+                if(connected_to_GS == 1){
+                    FILE *save_samples;
+                    getFileName(filename_downsample, 0);
+                    printf("Opening file with path %s\n", filename_downsample);
+                    save_samples = fopen(filename_downsample, "wb");
+                    fwrite(IQ_out_downsampled, sizeof(IQ_out_downsampled), 1, save_samples);
+                    //chown(filename_downsample, 1000, 1000);
+                    fclose(save_samples);
+                    samples_out = 0;
+                }
             }
-            /*int16_t out_i = mult_128(round11_i);
-            int16_t out_q = mult_128(round11_q);
-            if(connected_to_GS == 1){
-                FILE *save_samples;
-                save_samples = fopen(filename_downsample, "ab");
-                fwrite(&out_i, sizeof(int16_t), 1, save_samples);
-                fwrite(&out_q, sizeof(int16_t), 1, save_samples);
-                chown(filename_downsample, 1000, 1000);
-		        fclose(save_samples);
-                written_samples+=2;
-            }*/
         }
 
         if(samples_raw >= 16000000){
@@ -665,7 +657,7 @@ StreamACallback(short *xi, short *xq, sdrplay_api_StreamCbParamsT *params, unsig
             FILE *f_raw = fopen(filename_raw, "wb");
             fwrite(IQ_out_raw, sizeof(int16_t)*samples_raw, 1, f_raw);
             samples_raw = 0;
-            chown(filename_raw, 1000, 1000);
+            //chown(filename_raw, 1000, 1000);
             fclose(f_raw);
         }
     }
