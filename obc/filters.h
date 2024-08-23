@@ -2,11 +2,23 @@
 #include <stdbool.h>
 
 // round ( fir1(w, Wn) * 1024 ) 
+#define SIZE_4 4
 #define SIZE_16 17
 #define SIZE_32 33
 #define SIZE_128 129
 
 #define IGNORE_SAMPLES 2
+
+typedef struct
+{
+    int16_t buf[4];
+    int16_t head;
+    int16_t tail; 
+    int16_t wait;
+    bool next_OK; 
+    int curr_s; // Current sample, increments until buffer size, then curr_s -= 2. Apply filter when curr_s == SIZE_16-1
+} filter_4;
+
 
 typedef struct
 {
@@ -78,7 +90,39 @@ int16_t mult_128(filter_128 filter){
     return aux;
 }
 
-void add_16(filter_16 *filter, int element) {
+int16_t mean_4(filter_4 filter){
+    int32_t aux = 0;
+    for(int i=0; i < 4; i++){
+        aux += filter.buf[i];
+    }
+    return aux/4;
+}
+
+void add_4(filter_4 *filter, int16_t element) {
+    // check if the buffer is full
+    if ((filter->tail + 1) % SIZE_4 == filter->head) {
+        // buffer is full, overwrite the oldest element
+        filter->buf[filter->head] = element;
+
+        
+        filter->wait -= 1;
+        if(filter->wait == 0){
+            filter->wait = IGNORE_SAMPLES;
+            filter->next_OK = true;
+        }
+        
+        // increment both head and tail pointers
+        filter->head = (filter->head + 1) % SIZE_4;
+        filter->tail = (filter->tail + 1) % SIZE_4;
+    } else {
+        // buffer is not full, insert the new element
+        filter->buf[filter->tail] = element;
+        // increment the tail pointer
+        filter->tail = (filter->tail + 1) % SIZE_4;
+    }
+};
+
+void add_16(filter_16 *filter, int16_t element) {
     // check if the buffer is full
     if ((filter->tail + 1) % SIZE_16 == filter->head) {
         // buffer is full, overwrite the oldest element
@@ -102,7 +146,7 @@ void add_16(filter_16 *filter, int element) {
     }
 };
 
-void add_32(filter_32 *filter, int element) {
+void add_32(filter_32 *filter, int16_t element) {
     // check if the buffer is full
     if ((filter->tail + 1) % SIZE_32 == filter->head) {
         // buffer is full, overwrite the oldest element
@@ -126,7 +170,7 @@ void add_32(filter_32 *filter, int element) {
     }
 };
 
-void add_128(filter_128 *filter, int element) {
+void add_128(filter_128 *filter, int16_t element) {
     // check if the buffer is full
     if ((filter->tail + 1) % SIZE_128 == filter->head) {
         // buffer is full, overwrite the oldest element

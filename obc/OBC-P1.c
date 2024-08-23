@@ -74,14 +74,23 @@ int step = 1; // 1=100Hz, 2=200Hz ...
 double newCentralFrequency = DEFAULT_CENTRAL_FREQ;
 int newStep = DEFAULT_STEP;
 
-filter_16 round1_i,round1_q;
-filter_16 round2_i,round2_q;
-filter_16 round3_i,round3_q;
-filter_16 round4_i,round4_q;
-filter_16 round5_i,round5_q;
-filter_16 round6_i,round6_q;
-filter_16 round7_i,round7_q;
-filter_16 round8_i,round8_q;
+filter_4 round1_i,round1_q;
+filter_4 round2_i,round2_q;
+filter_4 round3_i,round3_q;
+filter_4 round4_i,round4_q;
+filter_4 round5_i,round5_q;
+filter_4 round6_i,round6_q;
+filter_4 round7_i,round7_q;
+filter_4 round8_i,round8_q;
+
+//filter_16 round1_i,round1_q;
+//filter_16 round2_i,round2_q;
+//filter_16 round3_i,round3_q;
+//filter_16 round4_i,round4_q;
+//filter_16 round5_i,round5_q;
+//filter_16 round6_i,round6_q;
+//filter_16 round7_i,round7_q;
+//filter_16 round8_i,round8_q;
 filter_16 round9_i,round9_q;
 filter_32 round10_i,round10_q;
 filter_128 round11_i,round11_q;
@@ -296,42 +305,50 @@ write_to_disk(short *xi, short *xq, int numSamples){
         //printf("round2_i.curr_s = %i | round2_i.head = %i | round2_i.tail = %i \n", round2_i.curr_s, round2_i.head, round2_i.tail);
         if (round1_i.next_OK){
             round1_i.next_OK = false;
-            add_16(&round2_i, mult_16(round1_i)); add_16(&round2_q, mult_16(round1_q));
+            //add_16(&round2_i, mult_16(round1_i)); add_16(&round2_q, mult_16(round1_q));
+            add_4(&round2_i, mean_4(round1_i)); add_4(&round2_q, mean_4(round1_q));
         }
 
         if (round2_i.next_OK){
             round2_i.next_OK = false;
-            add_16(&round3_i, mult_16(round2_i)); add_16(&round3_q, mult_16(round2_q));
+            //add_16(&round3_i, mult_16(round2_i)); add_16(&round3_q, mult_16(round2_q));
+            add_4(&round3_i, mean_4(round2_i)); add_4(&round3_q, mean_4(round2_q));
         }
 
         if (round3_i.next_OK){
             round3_i.next_OK = false;
-            add_16(&round4_i, mult_16(round3_i)); add_16(&round4_q, mult_16(round3_q));
+            //add_16(&round4_i, mult_16(round3_i)); add_16(&round4_q, mult_16(round3_q));
+            add_4(&round4_i, mean_4(round3_i)); add_4(&round4_q, mean_4(round3_q));
         }
 
         if (round4_i.next_OK){
             round4_i.next_OK = false;
-            add_16(&round5_i, mult_16(round4_i)); add_16(&round5_q, mult_16(round4_q));
+            //add_16(&round5_i, mult_16(round4_i)); add_16(&round5_q, mult_16(round4_q));
+            add_4(&round5_i, mean_4(round4_i)); add_4(&round5_q, mean_4(round4_q));
         }
 
         if (round5_i.next_OK){
             round5_i.next_OK = false;
-            add_16(&round6_i, mult_16(round5_i)); add_16(&round6_q, mult_16(round5_q));
+            //add_16(&round6_i, mult_16(round5_i)); add_16(&round6_q, mult_16(round5_q));
+            add_4(&round6_i, mean_4(round5_i)); add_4(&round6_q, mean_4(round5_q));
         }
 
         if (round6_i.next_OK){
             round6_i.next_OK = false;
-            add_16(&round7_i, mult_16(round6_i)); add_16(&round7_q, mult_16(round6_q));
+            //add_16(&round7_i, mult_16(round6_i)); add_16(&round7_q, mult_16(round6_q));
+            add_4(&round7_i, mean_4(round6_i)); add_4(&round7_q, mean_4(round6_q));
         }
 
         if (round7_i.next_OK){
             round7_i.next_OK = false;
-            add_16(&round8_i, mult_16(round7_i)); add_16(&round8_q, mult_16(round7_q));
+            //add_16(&round8_i, mult_16(round7_i)); add_16(&round8_q, mult_16(round7_q));
+            add_4(&round8_i, mean_4(round7_i)); add_4(&round8_q, mean_4(round7_q));
         }
 
         if (round8_i.next_OK){
             round8_i.next_OK = false;
-            add_16(&round9_i, mult_16(round8_i)); add_16(&round9_q, mult_16(round8_q));
+            //add_16(&round9_i, mult_16(round8_i)); add_16(&round9_q, mult_16(round8_q));
+            add_16(&round9_i, mean_4(round8_i)); add_16(&round9_q, mean_4(round8_q));
         }
 
         if (round9_i.next_OK){
@@ -691,7 +708,7 @@ int
 main(int argc, char *argv[])
 {
     // --------------- Filters
-    for(int i = 0; i < 17; i++){
+    for(int i = 0; i < 4; i++){
         round1_i.buf[i] = 0; round1_q.buf[i] = 0;
         round2_i.buf[i] = 0; round2_q.buf[i] = 0;
         round3_i.buf[i] = 0; round3_q.buf[i] = 0;
@@ -700,6 +717,10 @@ main(int argc, char *argv[])
         round6_i.buf[i] = 0; round6_q.buf[i] = 0;
         round7_i.buf[i] = 0; round7_q.buf[i] = 0;
         round8_i.buf[i] = 0; round8_q.buf[i] = 0;
+        //round9_i.buf[i] = 0; round9_q.buf[i] = 0;
+    }
+
+    for(int i = 0; i < 17; i++){
         round9_i.buf[i] = 0; round9_q.buf[i] = 0;
     }
     
