@@ -96,7 +96,7 @@ filter_16 round9_i,round9_q;
 filter_32 round10_i,round10_q;
 filter_128 round11_i,round11_q;
 int16_t IQ_out_downsampled[SAMPLE_RATE*2+1] = {0};
-int16_t IQ_out_raw[SAMPLE_RATE*2+1] = {0};
+int16_t IQ_out_raw[7812*2+1] = {0};
 
 int sinIndex = 0;
 int cosIndex = 20000;
@@ -371,10 +371,9 @@ write_to_disk(short *xi, short *xq, int numSamples){
             samples_out++;
             IQ_out_downsampled[samples_out] = mult_128(round11_q);
             samples_out++;
-            if(samples_out > 7905){
+            if(samples_out > 7812){
                 FILE *save_samples;
-                
-                save_samples = fopen(filename_downsample, "ab");
+                save_samples = fopen(filename_downsample, "wb");
                 fwrite(IQ_out_downsampled, sizeof(IQ_out_downsampled), 1, save_samples);
                 chown(filename_downsample, 1000, 1000);
 		        fclose(save_samples);
