@@ -560,6 +560,105 @@ StreamACallback(short *xi, short *xq, sdrplay_api_StreamCbParamsT *params, unsig
         samples_raw++;
         //printf("samples_raw %i\n", samples_raw);
 
+        add_4(&round1_i, (int16_t)((float)IQ[j]*sinCosTable[sinIndex])); add_4(&round1_q, (int16_t)((float)IQ[j+1]*sinCosTable[cosIndex]));
+
+        if (step > 0){
+            sinIndex = sinIndex+step > 80000 ? sinIndex+step-80000 : sinIndex+step;
+            cosIndex = cosIndex+step > 80000 ? cosIndex+step-80000 : cosIndex+step;
+        }
+        else{
+            sinIndex = sinIndex+step < 0 ? sinIndex+step+80000 : sinIndex+step;
+            cosIndex = cosIndex+step < 0 ? cosIndex+step+80000 : cosIndex+step;
+        }
+        //printf("samples_out %i \t sample %i\n", samples_out, sample);
+        //printf("round1_i.curr_s = %i | round1_i.head = %i | round1_i.tail = %i \n", round1_i.curr_s, round1_i.head, round1_i.tail);
+        //printf("round2_i.curr_s = %i | round2_i.head = %i | round2_i.tail = %i \n", round2_i.curr_s, round2_i.head, round2_i.tail);
+        if (round1_i.next_OK){
+            round1_i.next_OK = false;
+            //add_16(&round2_i, mult_16(round1_i)); add_16(&round2_q, mult_16(round1_q));
+            add_4(&round2_i, mean_4(round1_i)); add_4(&round2_q, mean_4(round1_q));
+        }
+
+        if (round2_i.next_OK){
+            round2_i.next_OK = false;
+            //add_16(&round3_i, mult_16(round2_i)); add_16(&round3_q, mult_16(round2_q));
+            add_4(&round3_i, mean_4(round2_i)); add_4(&round3_q, mean_4(round2_q));
+        }
+
+        if (round3_i.next_OK){
+            round3_i.next_OK = false;
+            //add_16(&round4_i, mult_16(round3_i)); add_16(&round4_q, mult_16(round3_q));
+            add_4(&round4_i, mean_4(round3_i)); add_4(&round4_q, mean_4(round3_q));
+        }
+
+        if (round4_i.next_OK){
+            round4_i.next_OK = false;
+            //add_16(&round5_i, mult_16(round4_i)); add_16(&round5_q, mult_16(round4_q));
+            add_4(&round5_i, mean_4(round4_i)); add_4(&round5_q, mean_4(round4_q));
+        }
+
+        if (round5_i.next_OK){
+            round5_i.next_OK = false;
+            //add_16(&round6_i, mult_16(round5_i)); add_16(&round6_q, mult_16(round5_q));
+            add_4(&round6_i, mean_4(round5_i)); add_4(&round6_q, mean_4(round5_q));
+        }
+
+        if (round6_i.next_OK){
+            round6_i.next_OK = false;
+            //add_16(&round7_i, mult_16(round6_i)); add_16(&round7_q, mult_16(round6_q));
+            add_4(&round7_i, mean_4(round6_i)); add_4(&round7_q, mean_4(round6_q));
+        }
+
+        if (round7_i.next_OK){
+            round7_i.next_OK = false;
+            //add_16(&round8_i, mult_16(round7_i)); add_16(&round8_q, mult_16(round7_q));
+            add_4(&round8_i, mean_4(round7_i)); add_4(&round8_q, mean_4(round7_q));
+        }
+
+        if (round8_i.next_OK){
+            round8_i.next_OK = false;
+            //add_16(&round9_i, mult_16(round8_i)); add_16(&round9_q, mult_16(round8_q));
+            add_16(&round9_i, mean_4(round8_i)); add_16(&round9_q, mean_4(round8_q));
+        }
+
+        if (round9_i.next_OK){
+            round9_i.next_OK = false;
+            add_32(&round10_i, mult_16(round9_i)); add_32(&round10_q, mult_16(round9_q));
+        }
+
+        if (round10_i.next_OK){
+            round10_i.next_OK = false;
+            add_128(&round11_i, mult_32(round10_i)); add_128(&round11_q, mult_32(round10_q));
+        }
+
+        if (round11_i.next_OK){
+            round11_i.next_OK = false;
+            IQ_out_downsampled[samples_out] = mult_128(round11_i);
+            samples_out++;
+            IQ_out_downsampled[samples_out] = mult_128(round11_q);
+            samples_out++;
+            if(samples_out > 7812){
+                FILE *save_samples;
+                getFileName(filename_downsample, 0);
+                save_samples = fopen(filename_downsample, "wb");
+                fwrite(IQ_out_downsampled, sizeof(IQ_out_downsampled), 1, save_samples);
+                chown(filename_downsample, 1000, 1000);
+		        fclose(save_samples);
+                samples_out = 0;
+            }
+            /*int16_t out_i = mult_128(round11_i);
+            int16_t out_q = mult_128(round11_q);
+            if(connected_to_GS == 1){
+                FILE *save_samples;
+                save_samples = fopen(filename_downsample, "ab");
+                fwrite(&out_i, sizeof(int16_t), 1, save_samples);
+                fwrite(&out_q, sizeof(int16_t), 1, save_samples);
+                chown(filename_downsample, 1000, 1000);
+		        fclose(save_samples);
+                written_samples+=2;
+            }*/
+        }
+
         if(samples_raw >= 16000000){
             getFileName(filename_raw, 0);
             printf("Opening file with path %s\n", filename_raw);
