@@ -291,7 +291,9 @@ write_to_disk(short *xi, short *xq, int numSamples){
         return;
 
     for(int sample = 0; sample < numSamples; sample++){
-        add_16(&round1_i, (int16_t)((float)IQ[sample]*sinCosTable[sinIndex])); add_16(&round1_q, (int16_t)((float)IQ[sample+1]*sinCosTable[cosIndex]));
+        //add_16(&round1_i, (int16_t)((float)IQ[sample]*sinCosTable[sinIndex])); add_16(&round1_q, (int16_t)((float)IQ[sample+1]*sinCosTable[cosIndex]));
+        add_4(&round1_i, (int16_t)((float)IQ[sample]*sinCosTable[sinIndex])); add_4(&round1_q, (int16_t)((float)IQ[sample+1]*sinCosTable[cosIndex]));
+
         if (step > 0){
             sinIndex = sinIndex+step > 80000 ? sinIndex+step-80000 : sinIndex+step;
             cosIndex = cosIndex+step > 80000 ? cosIndex+step-80000 : cosIndex+step;
